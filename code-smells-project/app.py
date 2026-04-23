@@ -72,9 +72,6 @@ def create_app():
 app = create_app()
 
 if __name__ == "__main__":
-    print("=" * 50)
-    print("SERVIDOR INICIADO")
-    print("Rodando em http://localhost:5000")
-    print("=" * 50)
+    app.logger.info("Servidor iniciado em http://%s:%s", app.config["HOST"], app.config["PORT"])
 
     app.run(host=app.config["HOST"], port=app.config["PORT"], debug=app.config["DEBUG"])

@@ -1,4 +1,4 @@
-from flask import request, jsonify
+from flask import request, jsonify, current_app
 from errors import AppError
 import auth_service
 import health_service
@@ -17,7 +17,7 @@ from validators import (
 
 def listar_produtos():
     produtos = product_repository.get_todos_produtos()
-    print("Listando " + str(len(produtos)) + " produtos")
+    current_app.logger.info("Listando %s produtos", len(produtos))
     return jsonify({"dados": produtos, "sucesso": True}), 200
 
 def buscar_produto(id):
@@ -29,7 +29,7 @@ def buscar_produto(id):
 def criar_produto():
     dados = validate_produto_payload(request.get_json(silent=True))
     produto_id = product_repository.criar_produto(**dados)
-    print("Produto criado com ID: " + str(produto_id))
+    current_app.logger.info("Produto criado com ID: %s", produto_id)
     return jsonify({"dados": {"id": produto_id}, "sucesso": True, "mensagem": "Produto criado"}), 201
 
 def atualizar_produto(id):
@@ -47,7 +47,7 @@ def deletar_produto(id):
         raise AppError("Produto não encontrado", 404)
 
     product_repository.deletar_produto(id)
-    print("Produto " + str(id) + " deletado")
+    current_app.logger.info("Produto %s deletado", id)
     return jsonify({"sucesso": True, "mensagem": "Produto deletado"}), 200
 
 def buscar_produtos():
@@ -68,17 +68,17 @@ def buscar_usuario(id):
 def criar_usuario():
     dados = validate_usuario_payload(request.get_json(silent=True))
     usuario_id = auth_service.criar_usuario(**dados)
-    print("Usuário criado: " + dados["email"])
+    current_app.logger.info("Usuário criado: %s", dados["email"])
     return jsonify({"dados": {"id": usuario_id}, "sucesso": True}), 201
 
 def login():
     dados = validate_login_payload(request.get_json(silent=True))
     usuario = auth_service.login_usuario(dados["email"], dados["senha"])
     if usuario:
-        print("Login bem-sucedido: " + dados["email"])
+        current_app.logger.info("Login bem-sucedido para %s", dados["email"])
         return jsonify({"dados": usuario, "sucesso": True, "mensagem": "Login OK"}), 200
 
-    print("Login falhou: " + dados["email"])
+    current_app.logger.warning("Login falhou para %s", dados["email"])
     raise AppError("Email ou senha inválidos", 401)
 
 def criar_pedido():

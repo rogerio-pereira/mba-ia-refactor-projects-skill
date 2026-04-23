@@ -1,6 +1,19 @@
 from database import get_db
 
 
+def _serialize_produto(row):
+    return {
+        "id": row["id"],
+        "nome": row["nome"],
+        "descricao": row["descricao"],
+        "preco": row["preco"],
+        "estoque": row["estoque"],
+        "categoria": row["categoria"],
+        "ativo": row["ativo"],
+        "criado_em": row["criado_em"],
+    }
+
+
 def get_todos_produtos():
     db = get_db()
     cursor = db.cursor()
@@ -8,16 +21,7 @@ def get_todos_produtos():
     rows = cursor.fetchall()
     result = []
     for row in rows:
-        result.append({
-            "id": row["id"],
-            "nome": row["nome"],
-            "descricao": row["descricao"],
-            "preco": row["preco"],
-            "estoque": row["estoque"],
-            "categoria": row["categoria"],
-            "ativo": row["ativo"],
-            "criado_em": row["criado_em"]
-        })
+        result.append(_serialize_produto(row))
     return result
 
 
@@ -27,16 +31,7 @@ def get_produto_por_id(produto_id):
     cursor.execute("SELECT * FROM produtos WHERE id = ?", (produto_id,))
     row = cursor.fetchone()
     if row:
-        return {
-            "id": row["id"],
-            "nome": row["nome"],
-            "descricao": row["descricao"],
-            "preco": row["preco"],
-            "estoque": row["estoque"],
-            "categoria": row["categoria"],
-            "ativo": row["ativo"],
-            "criado_em": row["criado_em"]
-        }
+        return _serialize_produto(row)
     return None
 
 
@@ -130,14 +125,5 @@ def buscar_produtos(termo, categoria=None, preco_min=None, preco_max=None):
     rows = cursor.fetchall()
     result = []
     for row in rows:
-        result.append({
-            "id": row["id"],
-            "nome": row["nome"],
-            "descricao": row["descricao"],
-            "preco": row["preco"],
-            "estoque": row["estoque"],
-            "categoria": row["categoria"],
-            "ativo": row["ativo"],
-            "criado_em": row["criado_em"]
-        })
+        result.append(_serialize_produto(row))
     return result

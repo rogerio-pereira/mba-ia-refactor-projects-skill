@@ -98,21 +98,23 @@ Recommendation: Remover a fachada legada e funções não utilizadas, ou documen
 MVC Target: Composition Root  
 Validation: `python3 -m py_compile code-smells-project/*.py` passed; smoke checks for `GET /produtos` and `POST /login` still succeed after removing the unused facade and dead helpers.
 
-### [LOW] Logging operacional usa `print` e expõe dados de negócio sem padronização
+### [FIXED] [LOW] Logging operacional usa `print` e expõe dados de negócio sem padronização
 File: `code-smells-project/controllers.py:19-22`, `code-smells-project/controllers.py:30-34`, `code-smells-project/controllers.py:45-52`, `code-smells-project/controllers.py:69-83`, `code-smells-project/notification_service.py:1-11`, `code-smells-project/app.py:75-78`  
 Category: Maintainability | Reliability  
 Description: O projeto registra eventos por `print`, incluindo e-mails e IDs de pedido, sem níveis de log, correlação, mascaramento ou integração com o logger do Flask.  
 Impact: Observabilidade fica limitada e dados operacionais podem vazar em stdout sem contexto estruturado. Em produção, isso dificulta troubleshooting e governança sobre dados sensíveis.  
 Recommendation: Padronizar logging com `app.logger` ou `logging`, definir níveis (`info`, `warning`, `error`) e evitar registrar identificadores sensíveis sem necessidade.  
 MVC Target: Middleware  
+Validation: `python3 -m py_compile code-smells-project/*.py` passed; smoke checks now emit structured Flask logger messages instead of raw `print`.
 
-### [LOW] Serialização de produto é duplicada em múltiplos pontos
+### [FIXED] [LOW] Serialização de produto é duplicada em múltiplos pontos
 File: `code-smells-project/product_repository.py:10-20`, `code-smells-project/product_repository.py:30-39`, `code-smells-project/product_repository.py:117-128`  
 Category: Maintainability  
 Description: O mapeamento de `sqlite3.Row` para dicionário de produto é repetido em três trechos praticamente idênticos.  
 Impact: Pequenas mudanças no contrato de resposta exigem alterações repetidas e aumentam a chance de inconsistência entre endpoints.  
 Recommendation: Extrair um serializer/helper privado único para produtos, seguindo o padrão já adotado em `_serialize_usuario()`.  
 MVC Target: Helper  
+Validation: `python3 -m py_compile code-smells-project/*.py` passed; `GET /produtos` continues returning `200` after serializer consolidation.
 
 ## Deprecated API Detection
 
@@ -127,6 +129,6 @@ Nenhum uso claramente depreciado de Flask 3.1.1 foi identificado nos arquivos an
 5. [FIXED] Extrair consultas operacionais de `health_check()` para uma camada própria de serviço/repositório.
 6. [FIXED] Separar a lógica de desconto do `report_repository` e mantê-la em um serviço de domínio.
 7. [FIXED] Eliminar código morto e camadas de compatibilidade que não participam do fluxo ativo.
-8. Substituir `print` por logging estruturado e consolidar serializers repetidos.
+8. [FIXED] Substituir `print` por logging estruturado e consolidar serializers repetidos.
 
 Phase 2 complete. Proceed with MVC refactoring (Phase 3)? [y/n]
