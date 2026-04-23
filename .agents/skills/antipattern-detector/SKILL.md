@@ -1,6 +1,6 @@
 ---
 name: refactor-arch
-description: Analyze any codebase, audit architecture/code quality issues, produce severity-ranked findings, refactor toward MVC, and validate behavior after changes.
+description: Analyze any codebase, audit architecture/code quality issues, produce severity-ranked findings, and then use .agents/skills/refactor-from-audit/SKILL.md for approved refactoring work.
 ---
 
 # Architecture Audit and MVC Refactoring Skill
@@ -13,7 +13,7 @@ The skill runs in three sequential phases:
 
 1. **Project Analysis**: detect stack, domain, dependencies, architecture, source layout, and execution commands.
 2. **Architecture Audit**: inspect the code against an anti-pattern catalog, generate a structured report with exact file/line findings, then pause for human confirmation.
-3. **MVC Refactoring and Validation**: apply the approved refactor, preserve behavior, and validate boot plus endpoint compatibility.
+3. **Refactoring and Validation**: after approval, load and follow `.agents/skills/refactor-from-audit/SKILL.md` to implement the report findings and proposed plan one change at a time.
 
 ## Operating Rules
 
@@ -21,7 +21,7 @@ The skill runs in three sequential phases:
 - Be technology-agnostic: infer language, framework, database, package manager, and test/boot commands from project files.
 - Do not modify files during Phase 1 or Phase 2.
 - Phase 2 must pause and ask for explicit confirmation before Phase 3.
-- During Phase 3, keep behavior compatible with the original public API unless the user explicitly approves a breaking change.
+- During Phase 3, use `.agents/skills/refactor-from-audit/SKILL.md` as the controlling workflow. Keep behavior compatible with the original public API unless the user explicitly approves a breaking change.
 - Prefer small, reversible edits that follow the project's existing framework conventions.
 - Never fabricate findings. Every finding must include an exact file path and line number or line range.
 - Do not assume missing context. If a necessary command, endpoint list, or runtime prerequisite cannot be inferred, state the uncertainty and choose the safest validation path.
@@ -131,9 +131,20 @@ Phase 2 complete. Proceed with MVC refactoring (Phase 3)? [y/n]
 
 Do not edit files until the user confirms.
 
-## Phase 3: MVC Refactoring
+## Phase 3: Refactoring From Audit
 
-After confirmation, refactor the project toward MVC while preserving behavior.
+After confirmation, load `.agents/skills/refactor-from-audit/SKILL.md` and use it to execute the saved Markdown report.
+
+The refactoring workflow must:
+
+- Read the report sections `Findings` and `Proposed Refactoring Plan`.
+- Implement one unfixed finding or plan item at a time.
+- Validate each change before marking it complete.
+- Update the report by prefixing the completed section or item with `[FIXED]`.
+- Create one English git commit for each completed section or item.
+- Continue preserving behavior and route/API compatibility unless the user explicitly approves a breaking change.
+
+Use the MVC responsibilities below as architectural guidance when a finding or plan item calls for MVC separation.
 
 Target responsibilities:
 
@@ -144,7 +155,7 @@ Target responsibilities:
 - **Middleware**: cross-cutting concerns such as error handling, auth checks, CORS, logging, and request context.
 - **Composition root**: application creation, dependency wiring, route registration, and boot command.
 
-Required transformation patterns:
+Common transformation patterns:
 
 - Extract hardcoded configuration into environment-aware config modules.
 - Move database access out of routes/controllers into model or repository boundaries.
@@ -163,7 +174,7 @@ Required transformation patterns:
 
 ## Validation
 
-Validate with the strongest commands the project supports:
+When Phase 3 is running, follow the validation rules in `.agents/skills/refactor-from-audit/SKILL.md`. In addition, validate with the strongest commands the project supports:
 
 - Install dependencies only if needed and approved by the user/environment.
 - Run formatting or linting only if the project already defines it.
@@ -195,6 +206,7 @@ If validation fails, diagnose the failure, fix it when feasible, and rerun valid
 End with:
 
 - Files changed.
-- Report path, if saved.
+- Report path updated.
+- Sections fixed and commit hashes created by the refactor-from-audit workflow.
 - Validation commands and results.
 - Any unresolved risks or manual follow-up needed.
