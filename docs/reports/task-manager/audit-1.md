@@ -73,13 +73,15 @@ Impact: Response time and database round trips grow linearly with result size, w
 Recommendation: Replace per-item lookups with eager loading (`joinedload`/relationships), grouped aggregate queries, or batched reporting queries owned by dedicated repository/report services.  
 MVC Target: Model  
 
-### [HIGH] Validation And Business Rules Are Duplicated Across Routes While The Shared Helper Layer Is Largely Unused
+### [FIXED] [HIGH] Validation And Business Rules Are Duplicated Across Routes While The Shared Helper Layer Is Largely Unused
 File: `task-manager-api/routes/task_routes.py:85-145`, `task-manager-api/routes/task_routes.py:156-215`, `task-manager-api/routes/user_routes.py:42-90`, `task-manager-api/routes/user_routes.py:92-132`, `task-manager-api/routes/report_routes.py:167-209`, `task-manager-api/utils/helpers.py:57-116`  
 Category: Architecture | Maintainability  
 Description: Status validation, priority limits, title length checks, date parsing, email validation, and tag normalization are implemented ad hoc in route handlers instead of being centralized. At the same time, `utils/helpers.py` already defines `process_task_data()`, `parse_date()`, `validate_email()`, and shared constants, but routes continue to duplicate equivalent logic and imports such as `marshmallow` are not used at all.  
 Impact: Business rules can drift between endpoints, fixes must be applied in multiple places, and there is no single authoritative validation contract for the API. This increases regression risk and makes the codebase harder to evolve.  
 Recommendation: Introduce a single validation layer for request payloads, reuse shared constants/helpers or a schema library consistently, and move field normalization out of route functions into dedicated services or schema classes.  
 MVC Target: Service  
+Fixed by introducing `services/validation_service.py` and routing task, user, and category payload validation through one normalization layer that reuses helpers and constants from `utils/helpers.py`.
+Validation: `python3 -m py_compile task-manager-api/services/validation_service.py task-manager-api/services/task_service.py task-manager-api/services/user_service.py task-manager-api/services/category_service.py` passed. `PYTHONPATH=task-manager-api python3` smoke checks verified normalized task, user, and category payloads.
 
 ### [MEDIUM] Error Handling Is Inconsistent And Frequently Hides Failure Causes
 File: `task-manager-api/routes/task_routes.py:13-63`, `task-manager-api/routes/task_routes.py:146-154`, `task-manager-api/routes/task_routes.py:217-238`, `task-manager-api/routes/user_routes.py:80-90`, `task-manager-api/routes/user_routes.py:127-132`, `task-manager-api/routes/user_routes.py:144-151`, `task-manager-api/routes/report_routes.py:182-223`, `task-manager-api/utils/helpers.py:43-50`, `task-manager-api/utils/helpers.py:81-89`  
@@ -114,7 +116,7 @@ The dominant framework-level deprecation issue in the analyzed scope is repeated
 1. [FIXED] Extract an environment-aware config module and remove hardcoded Flask and SMTP secrets, debug defaults, and database settings from source files.
 2. [FIXED] Replace the current authentication flow with safe password hashing, password-free serializers, and signed auth token generation behind a dedicated auth service.
 3. [FIXED] Split each route module into thinner HTTP adapters plus controller/service layers for tasks, users, reports, and categories.
-4. Centralize validation and normalization for task, user, and category payloads using shared schemas or a consistent helper/service layer.
+4. [FIXED] Centralize validation and normalization for task, user, and category payloads using shared schemas or a consistent helper/service layer.
 5. Refactor list and report queries to avoid N+1 access patterns by using eager loading or aggregate SQL queries.
 6. Introduce centralized error handling and structured logging instead of broad bare exceptions.
 7. Replace legacy `Query.get()` usage with `db.session.get(...)` and move ORM access behind clearer boundaries.

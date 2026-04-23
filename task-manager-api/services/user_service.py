@@ -1,15 +1,15 @@
-import re
-
 from config import Config
 from database import db
 from models.task import Task
 from models.user import User
 from services.auth_service import AuthService
+from services.validation_service import ValidationService
 
 
 class UserService:
     def __init__(self):
         self.auth_service = AuthService(Config.SECRET_KEY)
+        self.validation_service = ValidationService()
 
     def get_users(self):
         result = []
@@ -35,34 +35,18 @@ class UserService:
         return data, 200
 
     def create_user(self, data):
-        if not data:
-            return {'error': 'Dados inválidos'}, 400
+        normalized, error = self.validation_service.validate_user_payload(data)
+        if error:
+            return {'error': error}, 400
 
-        name = data.get('name')
-        email = data.get('email')
-        password = data.get('password')
-        role = data.get('role', 'user')
-
-        if not name:
-            return {'error': 'Nome é obrigatório'}, 400
-        if not email:
-            return {'error': 'Email é obrigatório'}, 400
-        if not password:
-            return {'error': 'Senha é obrigatória'}, 400
-        if not re.match(r'^[a-zA-Z0-9+_.-]+@[a-zA-Z0-9.-]+$', email):
-            return {'error': 'Email inválido'}, 400
-        if len(password) < 4:
-            return {'error': 'Senha deve ter no mínimo 4 caracteres'}, 400
-        if role not in ['user', 'admin', 'manager']:
-            return {'error': 'Role inválido'}, 400
-        if User.query.filter_by(email=email).first():
+        if User.query.filter_by(email=normalized['email']).first():
             return {'error': 'Email já cadastrado'}, 409
 
         user = User()
-        user.name = name
-        user.email = email
-        user.set_password(password)
-        user.role = role
+        user.name = normalized['name']
+        user.email = normalized['email']
+        user.set_password(normalized['password'])
+        user.role = normalized['role']
 
         try:
             db.session.add(user)
@@ -76,32 +60,28 @@ class UserService:
         user = User.query.get(user_id)
         if not user:
             return {'error': 'Usuário não encontrado'}, 404
-        if not data:
-            return {'error': 'Dados inválidos'}, 400
 
-        if 'name' in data:
-            user.name = data['name']
+        normalized, error = self.validation_service.validate_user_payload(data, partial=True)
+        if error:
+            return {'error': error}, 400
 
-        if 'email' in data:
-            if not re.match(r'^[a-zA-Z0-9+_.-]+@[a-zA-Z0-9.-]+$', data['email']):
-                return {'error': 'Email inválido'}, 400
-            existing = User.query.filter_by(email=data['email']).first()
+        if 'name' in normalized:
+            user.name = normalized['name']
+
+        if 'email' in normalized:
+            existing = User.query.filter_by(email=normalized['email']).first()
             if existing and existing.id != user_id:
                 return {'error': 'Email já cadastrado'}, 409
-            user.email = data['email']
+            user.email = normalized['email']
 
-        if 'password' in data:
-            if len(data['password']) < 4:
-                return {'error': 'Senha muito curta'}, 400
-            user.set_password(data['password'])
+        if 'password' in normalized:
+            user.set_password(normalized['password'])
 
-        if 'role' in data:
-            if data['role'] not in ['user', 'admin', 'manager']:
-                return {'error': 'Role inválido'}, 400
-            user.role = data['role']
+        if 'role' in normalized:
+            user.role = normalized['role']
 
-        if 'active' in data:
-            user.active = data['active']
+        if 'active' in normalized:
+            user.active = normalized['active']
 
         try:
             db.session.commit()

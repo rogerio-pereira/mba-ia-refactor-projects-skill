@@ -4,9 +4,13 @@ from database import db
 from models.category import Category
 from models.task import Task
 from models.user import User
+from services.validation_service import ValidationService
 
 
 class TaskService:
+    def __init__(self):
+        self.validation_service = ValidationService()
+
     def _serialize_task(self, task):
         task_data = {
             'id': task.id,
@@ -50,56 +54,29 @@ class TaskService:
         return data
 
     def create_task(self, data):
-        if not data:
-            return {'error': 'Dados inválidos'}, 400
+        normalized, error = self.validation_service.validate_task_payload(data)
+        if error:
+            return {'error': error}, 400
 
-        title = data.get('title')
-        if not title:
-            return {'error': 'Título é obrigatório'}, 400
-        if len(title) < 3:
-            return {'error': 'Título muito curto'}, 400
-        if len(title) > 200:
-            return {'error': 'Título muito longo'}, 400
-
-        description = data.get('description', '')
-        status = data.get('status', 'pending')
-        priority = data.get('priority', 3)
-        user_id = data.get('user_id')
-        category_id = data.get('category_id')
-        due_date = data.get('due_date')
-        tags = data.get('tags')
-
-        if status not in ['pending', 'in_progress', 'done', 'cancelled']:
-            return {'error': 'Status inválido'}, 400
-        if priority < 1 or priority > 5:
-            return {'error': 'Prioridade deve ser entre 1 e 5'}, 400
-
-        if user_id:
-            user = User.query.get(user_id)
+        if normalized['user_id']:
+            user = User.query.get(normalized['user_id'])
             if not user:
                 return {'error': 'Usuário não encontrado'}, 404
 
-        if category_id:
-            category = Category.query.get(category_id)
+        if normalized['category_id']:
+            category = Category.query.get(normalized['category_id'])
             if not category:
                 return {'error': 'Categoria não encontrada'}, 404
 
         task = Task()
-        task.title = title
-        task.description = description
-        task.status = status
-        task.priority = priority
-        task.user_id = user_id
-        task.category_id = category_id
-
-        if due_date:
-            try:
-                task.due_date = datetime.strptime(due_date, '%Y-%m-%d')
-            except ValueError:
-                return {'error': 'Formato de data inválido. Use YYYY-MM-DD'}, 400
-
-        if tags:
-            task.tags = ','.join(tags) if isinstance(tags, list) else tags
+        task.title = normalized['title']
+        task.description = normalized['description']
+        task.status = normalized['status']
+        task.priority = normalized['priority']
+        task.user_id = normalized['user_id']
+        task.category_id = normalized['category_id']
+        task.due_date = normalized['due_date']
+        task.tags = normalized['tags']
 
         try:
             db.session.add(task)
@@ -113,54 +90,28 @@ class TaskService:
         task = Task.query.get(task_id)
         if not task:
             return {'error': 'Task não encontrada'}, 404
-        if not data:
-            return {'error': 'Dados inválidos'}, 400
 
-        if 'title' in data:
-            if len(data['title']) < 3:
-                return {'error': 'Título muito curto'}, 400
-            if len(data['title']) > 200:
-                return {'error': 'Título muito longo'}, 400
-            task.title = data['title']
+        normalized, error = self.validation_service.validate_task_payload(data, partial=True)
+        if error:
+            return {'error': error}, 400
 
-        if 'description' in data:
-            task.description = data['description']
-
-        if 'status' in data:
-            if data['status'] not in ['pending', 'in_progress', 'done', 'cancelled']:
-                return {'error': 'Status inválido'}, 400
-            task.status = data['status']
-
-        if 'priority' in data:
-            if data['priority'] < 1 or data['priority'] > 5:
-                return {'error': 'Prioridade deve ser entre 1 e 5'}, 400
-            task.priority = data['priority']
-
-        if 'user_id' in data:
-            if data['user_id']:
-                user = User.query.get(data['user_id'])
+        if 'user_id' in normalized:
+            if normalized['user_id']:
+                user = User.query.get(normalized['user_id'])
                 if not user:
                     return {'error': 'Usuário não encontrado'}, 404
-            task.user_id = data['user_id']
+            task.user_id = normalized['user_id']
 
-        if 'category_id' in data:
-            if data['category_id']:
-                category = Category.query.get(data['category_id'])
+        if 'category_id' in normalized:
+            if normalized['category_id']:
+                category = Category.query.get(normalized['category_id'])
                 if not category:
                     return {'error': 'Categoria não encontrada'}, 404
-            task.category_id = data['category_id']
+            task.category_id = normalized['category_id']
 
-        if 'due_date' in data:
-            if data['due_date']:
-                try:
-                    task.due_date = datetime.strptime(data['due_date'], '%Y-%m-%d')
-                except ValueError:
-                    return {'error': 'Formato de data inválido'}, 400
-            else:
-                task.due_date = None
-
-        if 'tags' in data:
-            task.tags = ','.join(data['tags']) if isinstance(data['tags'], list) else data['tags']
+        for field in ['title', 'description', 'status', 'priority', 'due_date', 'tags']:
+            if field in normalized:
+                setattr(task, field, normalized[field])
 
         task.updated_at = datetime.utcnow()
 

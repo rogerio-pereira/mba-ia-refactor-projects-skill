@@ -1,9 +1,13 @@
 from database import db
 from models.category import Category
 from models.task import Task
+from services.validation_service import ValidationService
 
 
 class CategoryService:
+    def __init__(self):
+        self.validation_service = ValidationService()
+
     def get_categories(self):
         result = []
         for category in Category.query.all():
@@ -13,17 +17,14 @@ class CategoryService:
         return result
 
     def create_category(self, data):
-        if not data:
-            return {'error': 'Dados inválidos'}, 400
-
-        name = data.get('name')
-        if not name:
-            return {'error': 'Nome é obrigatório'}, 400
+        normalized, error = self.validation_service.validate_category_payload(data)
+        if error:
+            return {'error': error}, 400
 
         category = Category()
-        category.name = name
-        category.description = data.get('description', '')
-        category.color = data.get('color', '#000000')
+        category.name = normalized['name']
+        category.description = normalized['description']
+        category.color = normalized['color']
 
         try:
             db.session.add(category)
@@ -38,12 +39,13 @@ class CategoryService:
         if not category:
             return {'error': 'Categoria não encontrada'}, 404
 
-        if 'name' in data:
-            category.name = data['name']
-        if 'description' in data:
-            category.description = data['description']
-        if 'color' in data:
-            category.color = data['color']
+        normalized, error = self.validation_service.validate_category_payload(data, partial=True)
+        if error:
+            return {'error': error}, 400
+
+        for field in ['name', 'description', 'color']:
+            if field in normalized:
+                setattr(category, field, normalized[field])
 
         try:
             db.session.commit()
