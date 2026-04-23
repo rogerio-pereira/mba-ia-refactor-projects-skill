@@ -35,13 +35,14 @@ Approximate lines of code: 794 total lines, including 780 Python lines
 
 ## Findings
 
-### [CRITICAL] Hardcoded Secret And Unsafe Runtime Defaults
+### [FIXED] [CRITICAL] Hardcoded Secret And Unsafe Runtime Defaults
 File: `code-smells-project/app.py:6-9`  
 Category: Security | Architecture  
 Description: The Flask app is instantiated with a hardcoded `SECRET_KEY`, `DEBUG` is forced to `True`, and CORS is enabled globally without origin restrictions.  
 Impact: Source-controlled secrets, debug-enabled runtime behavior, and unrestricted browser access materially increase exposure in any non-local deployment.  
 Recommendation: Move runtime configuration into an environment-aware config module, require secrets outside development, default debug to disabled, and restrict allowed CORS origins. Create a .env and .env.example files (populate .env with current secrets in codebase).   
 MVC Target: Config  
+Validation: `python3 -m py_compile app.py config.py controllers.py models.py database.py` passed; `python3` import smoke test for `app` passed.  
 
 ### [CRITICAL] Unauthenticated Destructive Database Reset Endpoint
 File: `code-smells-project/app.py:47-57`  
@@ -177,7 +178,7 @@ No deprecated Flask API usage was identified in the inspected files. The main is
 
 ## Proposed Phase 3 Refactoring Plan
 
-1. Introduce an environment-aware configuration module and application factory to separate config, bootstrapping, and route registration.
+1. [FIXED] Introduce an environment-aware configuration module and application factory to separate config, bootstrapping, and route registration.
 2. Remove or hard-disable `/admin/reset-db` and `/admin/query`, or replace them with explicitly scoped authenticated admin operations if the exercise requires them.
 3. Replace all concatenated SQL with parameterized queries and reorganize persistence code into cohesive repository/model modules.
 4. Introduce request-scoped SQLite connection handling with deterministic teardown instead of a module-level global connection.
