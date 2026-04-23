@@ -446,3 +446,151 @@ A skill deve atingir os seguintes mínimos em **todos os 3 projetos**:
 - **Projetos diferentes exigem adaptação** — a Fase 3 de um projeto já parcialmente organizado não vai ter as mesmas transformações de um monolito. Sua skill deve se adaptar ao contexto.
 - **Pedir confirmação na Fase 2 é obrigatório** — o humano deve revisar o relatório antes de qualquer modificação.
 - **Consulte as referências do curso** — revise a documentação oficial da ferramenta escolhida e os materiais das aulas para relembrar a estrutura e anatomia de uma skill.
+
+---
+
+## Análise Manual
+
+### Projeto 1 — `code-smells-project`
+
+O projeto `code-smells-project` foi auditado em duas iterações, por isso existem dois relatórios:
+
+- `reports/code-smells/audit.md`
+- `reports/code-smells/audit-2.md`
+
+| Severidade | Problema | Justificativa |
+|---|---|---|
+| CRITICAL | Secrets hardcoded e defaults inseguros | Expõem configuração sensível e quebram a separação entre código e ambiente. |
+| CRITICAL | Endpoints administrativos destrutivos e query arbitrária sem autenticação | Permitem destruição ou exfiltração completa dos dados. |
+| CRITICAL | SQL injection em múltiplas consultas | Permite manipulação indevida do banco com input do usuário. |
+| HIGH | Senhas expostas ou tratadas de forma insegura | Comprometem autenticação e confidencialidade dos usuários. |
+| HIGH | `models.py` concentrando múltiplos domínios e responsabilidades | Viola separação de camadas e aumenta o custo de manutenção. |
+| MEDIUM | Validações duplicadas e inconsistentes | Deixam o contrato da API frágil e difícil de manter. |
+| MEDIUM | Regras de negócio misturadas com persistência | Colocam lógica de domínio nas camadas erradas. |
+| LOW | Logging improvisado e serialização duplicada | Prejudicam legibilidade, padronização e manutenção. |
+
+Resumo dos relatórios:
+
+- `reports/code-smells/audit.md`: `CRITICAL 5 | HIGH 5 | MEDIUM 5 | LOW 2`
+- `reports/code-smells/audit-2.md`: `CRITICAL 1 | HIGH 3 | MEDIUM 3 | LOW 2`
+
+### Projeto 2 — `ecommerce-api-legacy`
+
+Relatório utilizado:
+
+- `reports/ecommerce/audit-1.md`
+
+| Severidade | Problema | Justificativa |
+|---|---|---|
+| CRITICAL | Secrets hardcoded, credenciais fracas e exposição de dados sensíveis | Comprometem segurança operacional e confidencialidade. |
+| CRITICAL | `AppManager.js` como god class | Concentra bootstrap, rotas, regras de negócio, persistência e relatórios em um único arquivo. |
+| HIGH | Checkout sem transação | Pode deixar o fluxo em estado parcial e inconsistente. |
+| HIGH | Relatório administrativo sem autenticação | Expõe informações internas da aplicação. |
+| HIGH | Exclusão de usuário quebrando integridade referencial | Gera dados órfãos e distorce relatórios. |
+| MEDIUM | Payload de entrada obscuro e validação insuficiente | Aumenta ambiguidade da API e aceita dados ruins. |
+| MEDIUM | Tratamento de erro inconsistente | Dificulta observabilidade e previsibilidade das respostas. |
+| LOW | Composition root acoplado à implementação concreta | Reduz testabilidade e flexibilidade do boot. |
+
+Resumo do relatório:
+
+- `reports/ecommerce/audit-1.md`: `CRITICAL 2 | HIGH 4 | MEDIUM 3 | LOW 1`
+
+### Projeto 3 — `task-manager-api`
+
+Relatório utilizado:
+
+- `reports/task-manager/audit-1.md`
+
+| Severidade | Problema | Justificativa |
+|---|---|---|
+| CRITICAL | Secrets e runtime defaults hardcoded | Expõem dados sensíveis e mantêm a aplicação insegura em produção. |
+| CRITICAL | Serialização de usuário expondo hash e autenticação fraca | Quebra garantias básicas de segurança. |
+| HIGH | Blueprints com responsabilidades excessivas | Misturam rota, regra de negócio, serialização e acesso a dados. |
+| HIGH | Padrões N+1 em listagens e relatórios | Prejudicam performance e escalabilidade. |
+| HIGH | Validação espalhada pelas rotas | Torna o contrato da API inconsistente. |
+| MEDIUM | Tratamento de erro inconsistente | Esconde falhas reais e dificulta suporte. |
+| MEDIUM | Uso de API legada `Query.get()` | Aumenta dívida técnica e atrito com SQLAlchemy moderno. |
+| MEDIUM | Bootstrap com side effects em `app.py` | Impede composition root claro e inicialização controlada. |
+
+Resumo do relatório:
+
+- `reports/task-manager/audit-1.md`: `CRITICAL 2 | HIGH 3 | MEDIUM 3 | LOW 0`
+
+## Construção da Skill
+
+Em vez de duplicar a skill dentro de cada projeto, a implementação foi centralizada em:
+
+- `.agents/skills/antipattern-detector/SKILL.md`
+- `.agents/skills/refactor-from-audit/SKILL.md`
+
+Essa quebra da regra do enunciado foi intencional. A motivação foi evitar duplicação de código e manter uma única fonte de verdade para:
+
+- heurísticas de análise
+- catálogo de anti-patterns
+- template de relatório
+- diretrizes MVC
+- fluxo de refatoração
+
+Na prática, a skill de auditoria ficou concentrada em `.agents/skills/antipattern-detector/SKILL.md`, e a skill de refatoração incremental ficou separada em `.agents/skills/refactor-from-audit/SKILL.md`.
+
+### Decisão arquitetural
+
+- eliminou a necessidade de manter três cópias idênticas da mesma skill
+- permitiu evoluir auditoria e refatoração de forma desacoplada, mas reutilizável nos três projetos
+
+O trade-off é que a estrutura final não segue literalmente a exigência de copiar a skill para dentro de cada projeto. Ainda assim, a mesma base de conhecimento foi usada para os três cenários, preservando o objetivo principal do desafio: provar reutilização entre stacks diferentes.
+
+## Resultados
+
+### Relatórios usados
+
+- `reports/code-smells/audit.md`
+- `reports/code-smells/audit-2.md`
+- `reports/ecommerce/audit-1.md`
+- `reports/task-manager/audit-1.md`
+
+### Antes e depois
+
+- `code-smells-project`: saiu de uma organização parcial com responsabilidades misturadas para uma separação mais clara entre config, controllers, repositórios e serviços.
+- `ecommerce-api-legacy`: saiu de um único `AppManager.js` centralizador para uma estrutura com composition root, controllers, services, repositories e middleware.
+- `task-manager-api`: saiu de blueprints pesados para uma arquitetura com `app_factory.py`, controllers, services e tratamento de erro centralizado.
+
+### Checklist de validação
+
+#### `code-smells-project`
+
+- [x] Linguagem detectada corretamente
+- [x] Framework detectado corretamente
+- [x] Domínio descrito corretamente
+- [x] Findings com arquivo e linhas exatos
+- [x] Findings ordenados por severidade
+- [x] Mínimo de 5 findings identificados
+- [x] Skill pausa antes da Fase 3
+- [x] Aplicação validada após refatoração
+
+#### `ecommerce-api-legacy`
+
+- [x] Linguagem detectada corretamente
+- [x] Framework detectado corretamente
+- [x] Domínio descrito corretamente
+- [x] Findings com arquivo e linhas exatos
+- [x] Findings ordenados por severidade
+- [x] Mínimo de 5 findings identificados
+- [x] Skill pausa antes da Fase 3
+- [x] Aplicação validada após refatoração
+
+#### `task-manager-api`
+
+- [x] Linguagem detectada corretamente
+- [x] Framework detectado corretamente
+- [x] Domínio descrito corretamente
+- [x] Findings com arquivo e linhas exatos
+- [x] Findings ordenados por severidade
+- [x] Mínimo de 5 findings identificados
+- [x] Detecção de API deprecated incluída
+- [x] Skill pausa antes da Fase 3
+- [x] Aplicação validada após refatoração
+
+### Evidências
+
+As evidências de execução e validação estão registradas diretamente nos relatórios, inclusive com itens marcados como `[FIXED]` e comandos de verificação ao final de cada auditoria.
