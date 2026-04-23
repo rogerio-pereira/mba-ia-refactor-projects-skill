@@ -27,7 +27,7 @@ class UserService:
         return result
 
     def get_user(self, user_id):
-        user = User.query.get(user_id)
+        user = db.session.get(User, user_id)
         if not user:
             raise NotFoundError('Usuário não encontrado')
 
@@ -58,7 +58,7 @@ class UserService:
             raise ApiError('Erro ao criar usuário') from exc
 
     def update_user(self, user_id, data):
-        user = User.query.get(user_id)
+        user = db.session.get(User, user_id)
         if not user:
             raise NotFoundError('Usuário não encontrado')
 
@@ -92,7 +92,7 @@ class UserService:
             raise ApiError('Erro ao atualizar') from exc
 
     def delete_user(self, user_id):
-        user = User.query.get(user_id)
+        user = db.session.get(User, user_id)
         if not user:
             raise NotFoundError('Usuário não encontrado')
 
@@ -108,7 +108,7 @@ class UserService:
             raise ApiError('Erro ao deletar') from exc
 
     def get_user_tasks(self, user_id):
-        user = User.query.get(user_id)
+        user = db.session.get(User, user_id)
         if not user:
             raise NotFoundError('Usuário não encontrado')
 

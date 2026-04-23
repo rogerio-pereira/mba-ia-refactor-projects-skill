@@ -44,7 +44,7 @@ class CategoryService:
             raise ApiError('Erro ao criar categoria') from exc
 
     def update_category(self, cat_id, data):
-        category = Category.query.get(cat_id)
+        category = db.session.get(Category, cat_id)
         if not category:
             raise NotFoundError('Categoria não encontrada')
 
@@ -64,7 +64,7 @@ class CategoryService:
             raise ApiError('Erro ao atualizar') from exc
 
     def delete_category(self, cat_id):
-        category = Category.query.get(cat_id)
+        category = db.session.get(Category, cat_id)
         if not category:
             raise NotFoundError('Categoria não encontrada')
 

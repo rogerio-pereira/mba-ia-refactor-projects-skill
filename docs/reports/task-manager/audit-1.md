@@ -95,13 +95,15 @@ MVC Target: Middleware
 Fixed by introducing typed API exceptions plus centralized Flask error handlers in `middleware/error_handlers.py`, and by moving service failures to explicit `ValidationError`, `NotFoundError`, `ConflictError`, and `ApiError` flows.
 Validation: `python3 -m py_compile task-manager-api/app.py task-manager-api/errors.py task-manager-api/middleware/error_handlers.py task-manager-api/controllers/task_controller.py task-manager-api/controllers/user_controller.py task-manager-api/controllers/report_controller.py task-manager-api/services/task_service.py task-manager-api/services/user_service.py task-manager-api/services/report_service.py task-manager-api/services/category_service.py` passed. `PYTHONPATH=task-manager-api python3` smoke checks verified exception status codes.
 
-### [MEDIUM] The Codebase Relies On Legacy `Query.get()` Calls Instead Of SQLAlchemy 2 Style Session Access
+### [FIXED] [MEDIUM] The Codebase Relies On Legacy `Query.get()` Calls Instead Of SQLAlchemy 2 Style Session Access
 File: `task-manager-api/routes/task_routes.py:42`, `task-manager-api/routes/task_routes.py:51`, `task-manager-api/routes/task_routes.py:67`, `task-manager-api/routes/task_routes.py:117`, `task-manager-api/routes/task_routes.py:122`, `task-manager-api/routes/task_routes.py:158`, `task-manager-api/routes/task_routes.py:188`, `task-manager-api/routes/task_routes.py:195`, `task-manager-api/routes/task_routes.py:227`, `task-manager-api/routes/user_routes.py:29`, `task-manager-api/routes/user_routes.py:94`, `task-manager-api/routes/user_routes.py:136`, `task-manager-api/routes/user_routes.py:155`, `task-manager-api/routes/report_routes.py:105`, `task-manager-api/routes/report_routes.py:192`, `task-manager-api/routes/report_routes.py:213`  
 Category: Maintainability | Reliability  
 Description: Route handlers repeatedly call `Model.query.get(...)`, which is a legacy SQLAlchemy query pattern. The project is already on Flask-SQLAlchemy 3.1.1, where `db.session.get(Model, id)` is the modern access path aligned with SQLAlchemy 2.x.  
 Impact: Continued use of legacy ORM APIs increases upgrade friction, normalizes outdated patterns across the codebase, and makes future framework migrations riskier than necessary.  
 Recommendation: Replace `Model.query.get(...)` with `db.session.get(Model, id)` while refactoring data access into services or repositories so ORM usage is centralized.  
 MVC Target: Model  
+Fixed by replacing all remaining entity lookups in services with `db.session.get(...)` after ORM access was centralized out of the route layer.
+Validation: `python3 -m py_compile task-manager-api/services/task_service.py task-manager-api/services/category_service.py task-manager-api/services/user_service.py task-manager-api/services/report_service.py` passed. `rg -n "query\\.get\\(" task-manager-api` returned no matches.
 
 ### [MEDIUM] Application Bootstrap Has Import-Time Side Effects And No Clear Composition Root Boundary
 File: `task-manager-api/app.py:9-34`, `task-manager-api/seed.py:2-14`  
@@ -123,7 +125,7 @@ The dominant framework-level deprecation issue in the analyzed scope is repeated
 4. [FIXED] Centralize validation and normalization for task, user, and category payloads using shared schemas or a consistent helper/service layer.
 5. [FIXED] Refactor list and report queries to avoid N+1 access patterns by using eager loading or aggregate SQL queries.
 6. [FIXED] Introduce centralized error handling and structured logging instead of broad bare exceptions.
-7. Replace legacy `Query.get()` usage with `db.session.get(...)` and move ORM access behind clearer boundaries.
+7. [FIXED] Replace legacy `Query.get()` usage with `db.session.get(...)` and move ORM access behind clearer boundaries.
 8. Create an application factory/composition root so app creation, DB initialization, seeding, and server startup are decoupled.
 
 Phase 2 complete. Proceed with MVC refactoring (Phase 3)? [y/n]

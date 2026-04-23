@@ -43,7 +43,7 @@ class TaskService:
         return [self._serialize_task(task) for task in tasks]
 
     def get_task(self, task_id):
-        task = Task.query.get(task_id)
+        task = db.session.get(Task, task_id)
         if not task:
             raise NotFoundError('Task não encontrada')
 
@@ -57,12 +57,12 @@ class TaskService:
             raise ValidationError(error)
 
         if normalized['user_id']:
-            user = User.query.get(normalized['user_id'])
+            user = db.session.get(User, normalized['user_id'])
             if not user:
                 raise NotFoundError('Usuário não encontrado')
 
         if normalized['category_id']:
-            category = Category.query.get(normalized['category_id'])
+            category = db.session.get(Category, normalized['category_id'])
             if not category:
                 raise NotFoundError('Categoria não encontrada')
 
@@ -85,7 +85,7 @@ class TaskService:
             raise ApiError('Erro ao criar task') from exc
 
     def update_task(self, task_id, data):
-        task = Task.query.get(task_id)
+        task = db.session.get(Task, task_id)
         if not task:
             raise NotFoundError('Task não encontrada')
 
@@ -95,14 +95,14 @@ class TaskService:
 
         if 'user_id' in normalized:
             if normalized['user_id']:
-                user = User.query.get(normalized['user_id'])
+                user = db.session.get(User, normalized['user_id'])
                 if not user:
                     raise NotFoundError('Usuário não encontrado')
             task.user_id = normalized['user_id']
 
         if 'category_id' in normalized:
             if normalized['category_id']:
-                category = Category.query.get(normalized['category_id'])
+                category = db.session.get(Category, normalized['category_id'])
                 if not category:
                     raise NotFoundError('Categoria não encontrada')
             task.category_id = normalized['category_id']
@@ -121,7 +121,7 @@ class TaskService:
             raise ApiError('Erro ao atualizar') from exc
 
     def delete_task(self, task_id):
-        task = Task.query.get(task_id)
+        task = db.session.get(Task, task_id)
         if not task:
             raise NotFoundError('Task não encontrada')
 

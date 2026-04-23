@@ -2,6 +2,7 @@ from datetime import datetime, timedelta
 
 from sqlalchemy import func
 
+from database import db
 from errors import NotFoundError
 from models.category import Category
 from models.task import Task
@@ -90,7 +91,7 @@ class ReportService:
         }
 
     def user_report(self, user_id):
-        user = User.query.get(user_id)
+        user = db.session.get(User, user_id)
         if not user:
             raise NotFoundError('Usuário não encontrado')
 
