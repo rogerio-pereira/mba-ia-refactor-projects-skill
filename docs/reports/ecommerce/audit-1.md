@@ -80,13 +80,14 @@ Recommendation: Protect the route with admin authentication/authorization and re
 MVC Target: Controller  
 Validation: `GET /api/admin/financial-report` now returns `401` without `x-admin-token`, returns `200` with the configured token, and the repository builds the same report shape from a single joined query path.  
 
-### [HIGH] User Deletion Breaks Referential Integrity And Leaves Dirty Financial Data
+### [FIXED] [HIGH] User Deletion Breaks Referential Integrity And Leaves Dirty Financial Data
 File: `ecommerce-api-legacy/src/AppManager.js:131-136`, `ecommerce-api-legacy/src/AppManager.js:14-16`  
 Category: Reliability | Architecture  
 Description: `DELETE /api/users/:id` removes a user record but intentionally leaves related enrollments and payments behind, as confirmed by the response message. The schema also lacks foreign key constraints to prevent this corruption.  
 Impact: The system creates orphaned records, invalid reporting data, and a database state that no longer reflects business reality.  
 Recommendation: Enforce referential integrity with foreign keys, define a consistent deletion policy, and move destructive user operations into a dedicated service/repository flow with validation.  
 MVC Target: Model  
+Validation: deleting `/api/users/1` now removes dependent enrollments and payments, and direct database checks confirmed no orphaned rows remain after the transaction.  
 
 ### [MEDIUM] Request Validation Is Incomplete And Uses Obscure Payload Contracts
 File: `ecommerce-api-legacy/src/AppManager.js:29-35`, `ecommerce-api-legacy/api.http:7-12`  
@@ -132,7 +133,7 @@ No clearly deprecated Express 4.18.2 APIs were identified in the analyzed files.
 3. [FIXED] Replace `badCrypto` with a real password hashing strategy and require explicit validated credentials in checkout.
 4. [FIXED] Refactor checkout into a transactional service that atomically creates users, enrollments, payments, and audit logs.
 5. [FIXED] Protect administrative endpoints with authentication/authorization and redesign the financial report query to avoid N+1 access patterns.
-6. Enforce referential integrity in the schema and redesign destructive user deletion to preserve consistent domain state.
+6. [FIXED] Enforce referential integrity in the schema and redesign destructive user deletion to preserve consistent domain state.
 7. Add centralized request validation and standardized error handling for all endpoints.
 8. Remove hidden global mutable state from `utils.js` and replace it with explicit collaborators or eliminate it entirely.
 9. [FIXED] Introduce an application factory to decouple bootstrapping from runtime server start.

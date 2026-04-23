@@ -1,10 +1,14 @@
-const { deleteUser } = require('../repositories/userRepository');
+const { removeUser } = require('../services/userService');
 
 function createUserController({ db }) {
     return {
         async remove(req, res) {
-            await deleteUser(db, req.params.id);
-            return res.send('Usuário deletado, mas as matrículas e pagamentos ficaram sujos no banco.');
+            try {
+                await removeUser({ db, userId: req.params.id });
+                return res.send('Usuário e dados relacionados deletados com sucesso.');
+            } catch (error) {
+                return res.status(error.statusCode || 500).send(error.statusCode ? error.message : 'Erro DB');
+            }
         },
     };
 }
