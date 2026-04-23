@@ -1,3 +1,5 @@
+const { hashPassword } = require('../services/passwordService');
+
 function initDb(db) {
     db.serialize(() => {
         db.run('CREATE TABLE users (id INTEGER PRIMARY KEY, name TEXT, email TEXT, pass TEXT)');
@@ -6,7 +8,11 @@ function initDb(db) {
         db.run('CREATE TABLE payments (id INTEGER PRIMARY KEY, enrollment_id INTEGER, amount REAL, status TEXT)');
         db.run('CREATE TABLE audit_logs (id INTEGER PRIMARY KEY, action TEXT, created_at DATETIME)');
 
-        db.run("INSERT INTO users (name, email, pass) VALUES ('Leonan', 'leonan@fullcycle.com.br', '123')");
+        db.run('INSERT INTO users (name, email, pass) VALUES (?, ?, ?)', [
+            'Leonan',
+            'leonan@fullcycle.com.br',
+            hashPassword('seed-password-123'),
+        ]);
         db.run("INSERT INTO courses (title, price, active) VALUES ('Clean Architecture', 997.00, 1), ('Docker', 497.00, 1)");
         db.run('INSERT INTO enrollments (user_id, course_id) VALUES (1, 1)');
         db.run("INSERT INTO payments (enrollment_id, amount, status) VALUES (1, 997.00, 'PAID')");

@@ -4,6 +4,7 @@ const { findUserIdByEmail, createUser } = require('../repositories/userRepositor
 const { createEnrollment } = require('../repositories/enrollmentRepository');
 const { createPayment } = require('../repositories/paymentRepository');
 const { createAuditLog } = require('../repositories/auditLogRepository');
+const { hashPassword } = require('../services/passwordService');
 
 function createCheckoutController({ db }) {
     return async function checkout(req, res) {
@@ -27,7 +28,11 @@ function createCheckoutController({ db }) {
             let user = await findUserIdByEmail(db, email);
 
             if (!user) {
-                const createdUser = await createUser(db, userName, email, password);
+                if (!password) {
+                    return res.status(400).send('Password is required');
+                }
+
+                const createdUser = await createUser(db, userName, email, hashPassword(password));
                 user = { id: createdUser.lastID };
             }
 

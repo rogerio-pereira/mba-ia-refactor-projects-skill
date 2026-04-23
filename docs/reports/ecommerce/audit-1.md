@@ -53,13 +53,14 @@ Recommendation: Split the code into a composition root plus dedicated route/cont
 MVC Target: Composition Root  
 Validation: `node -e "const { createApp } = require('./ecommerce-api-legacy/src/createApp'); ..."` passed with smoke checks for checkout, report, and delete routes.  
 
-### [HIGH] Checkout Flow Uses Weak Password Hashing And Unsafe Default Password Fallback
+### [FIXED] [HIGH] Checkout Flow Uses Weak Password Hashing And Unsafe Default Password Fallback
 File: `ecommerce-api-legacy/src/AppManager.js:66-71`, `ecommerce-api-legacy/src/utils.js:17-23`  
 Category: Security  
 Description: New users are created with `badCrypto(p || "123456")`, which silently falls back to a default password and derives a deterministic 10-character pseudo-hash from repeated Base64 fragments.  
 Impact: Account creation can succeed with an implicit weak password, and stored credentials are easily predictable and unsuitable for any real authentication scenario.  
 Recommendation: Require an explicit password for user creation, reject missing credentials, and replace `badCrypto` with a standard password hashing function such as `bcrypt` or `argon2`.  
 MVC Target: Service  
+Validation: checkout smoke test now returns `400` when `pwd` is omitted for a new user, and a database seed check confirmed the stored password is no longer `123`.  
 
 ### [HIGH] Checkout Workflow Lacks Transaction Boundaries And Can Leave Partial State
 File: `ecommerce-api-legacy/src/AppManager.js:37-77`  
@@ -126,7 +127,7 @@ No clearly deprecated Express 4.18.2 APIs were identified in the analyzed files.
 
 1. [FIXED] Extract environment-aware configuration and remove all hardcoded secrets, seeded real credentials, and sensitive logs.
 2. [FIXED] Split `AppManager` into composition root, routes/controllers, services, repositories/models, and middleware following MVC boundaries.
-3. Replace `badCrypto` with a real password hashing strategy and require explicit validated credentials in checkout.
+3. [FIXED] Replace `badCrypto` with a real password hashing strategy and require explicit validated credentials in checkout.
 4. Refactor checkout into a transactional service that atomically creates users, enrollments, payments, and audit logs.
 5. Protect administrative endpoints with authentication/authorization and redesign the financial report query to avoid N+1 access patterns.
 6. Enforce referential integrity in the schema and redesign destructive user deletion to preserve consistent domain state.
