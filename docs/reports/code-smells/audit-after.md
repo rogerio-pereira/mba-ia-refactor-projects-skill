@@ -71,13 +71,14 @@ Recommendation: Reforçar o schema com constraints de banco (`NOT NULL`, `UNIQUE
 MVC Target: Model  
 Validation: `python3 -m py_compile code-smells-project/*.py` passed; fresh database boot now creates `UNIQUE`/`FOREIGN KEY` constraints, user creation rejects invalid or duplicate emails, orders reject unknown users, and legacy-schema boot migrates data successfully.
 
-### [MEDIUM] Controller de health bypassa service/repository e conhece detalhes de persistência
+### [FIXED] [MEDIUM] Controller de health bypassa service/repository e conhece detalhes de persistência
 File: `code-smells-project/controllers.py:116-136`  
 Category: Architecture  
 Description: `health_check()` acessa `get_db()` diretamente, executa SQL inline e monta a resposta HTTP no mesmo bloco. Isso quebra a boundary adotada no restante da aplicação, onde acesso a dados tende a ficar em repositórios e orquestração em serviços.  
 Impact: O controller passa a conhecer estrutura de banco e detalhes de contagem, aumentando acoplamento e reduzindo reutilização/testabilidade. Mudanças simples de persistência exigirão alteração na camada HTTP.  
 Recommendation: Extrair um `health_service` ou `system_repository` para encapsular as consultas operacionais e deixar o controller apenas traduzir request/response.  
 MVC Target: Controller  
+Validation: `python3 -m py_compile code-smells-project/*.py` passed; `GET /health` still returns `200` with the expected count payload after the extraction.
 
 ### [MEDIUM] Regra de desconto de faturamento está misturada com acesso a dados
 File: `code-smells-project/report_repository.py:8-41`  
@@ -121,7 +122,7 @@ Nenhum uso claramente depreciado de Flask 3.1.1 foi identificado nos arquivos an
 2. [FIXED] Reescrever a criação de pedidos para usar reserva/decremento de estoque atômicos e falhar corretamente em conflitos de concorrência.
 3. [FIXED] Corrigir o fluxo de atualização de status para validar existência do pedido antes de persistir e notificar.
 4. [FIXED] Reforçar o schema SQLite com constraints reais (`NOT NULL`, `UNIQUE`, `FOREIGN KEY`) e alinhar validadores ao novo contrato.
-5. Extrair consultas operacionais de `health_check()` para uma camada própria de serviço/repositório.
+5. [FIXED] Extrair consultas operacionais de `health_check()` para uma camada própria de serviço/repositório.
 6. Separar a lógica de desconto do `report_repository` e mantê-la em um serviço de domínio.
 7. Eliminar código morto e camadas de compatibilidade que não participam do fluxo ativo.
 8. Substituir `print` por logging estruturado e consolidar serializers repetidos.

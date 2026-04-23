@@ -1,7 +1,7 @@
 from flask import request, jsonify
 from errors import AppError
-from database import get_db
 import auth_service
+import health_service
 import order_service
 import product_repository
 import report_repository
@@ -114,23 +114,4 @@ def relatorio_vendas():
     return jsonify({"dados": relatorio, "sucesso": True}), 200
 
 def health_check():
-    db = get_db()
-    cursor = db.cursor()
-    cursor.execute("SELECT 1")
-    cursor.execute("SELECT COUNT(*) FROM produtos")
-    produtos = cursor.fetchone()[0]
-    cursor.execute("SELECT COUNT(*) FROM usuarios")
-    usuarios = cursor.fetchone()[0]
-    cursor.execute("SELECT COUNT(*) FROM pedidos")
-    pedidos = cursor.fetchone()[0]
-
-    return jsonify({
-        "status": "ok",
-        "database": "connected",
-        "counts": {
-            "produtos": produtos,
-            "usuarios": usuarios,
-            "pedidos": pedidos
-        },
-        "versao": "1.0.0"
-    }), 200
+    return jsonify(health_service.get_health_status()), 200
