@@ -71,13 +71,14 @@ Recommendation: Wrap the entire checkout flow in an explicit transaction, fail a
 MVC Target: Service  
 Validation: checkout smoke test passed, and a forced failure after dropping `payments` confirmed the transaction rolls back without leaving created users or enrollments behind.  
 
-### [HIGH] Administrative Financial Report Is Unauthenticated And Implements N+1 Query Patterns
+### [FIXED] [HIGH] Administrative Financial Report Is Unauthenticated And Implements N+1 Query Patterns
 File: `ecommerce-api-legacy/src/AppManager.js:80-129`, `ecommerce-api-legacy/api.http:27-28`  
 Category: Security | Performance  
 Description: The administrative report endpoint is publicly exposed with no authentication or authorization checks. It also queries enrollments per course, then user and payment records per enrollment, creating repeated database round trips inside nested loops.  
 Impact: Any caller can access revenue and student information, and response latency will degrade as course and enrollment counts grow.  
 Recommendation: Protect the route with admin authentication/authorization and replace the nested query pattern with joined or batched queries handled in a reporting repository/service.  
 MVC Target: Controller  
+Validation: `GET /api/admin/financial-report` now returns `401` without `x-admin-token`, returns `200` with the configured token, and the repository builds the same report shape from a single joined query path.  
 
 ### [HIGH] User Deletion Breaks Referential Integrity And Leaves Dirty Financial Data
 File: `ecommerce-api-legacy/src/AppManager.js:131-136`, `ecommerce-api-legacy/src/AppManager.js:14-16`  
@@ -130,7 +131,7 @@ No clearly deprecated Express 4.18.2 APIs were identified in the analyzed files.
 2. [FIXED] Split `AppManager` into composition root, routes/controllers, services, repositories/models, and middleware following MVC boundaries.
 3. [FIXED] Replace `badCrypto` with a real password hashing strategy and require explicit validated credentials in checkout.
 4. [FIXED] Refactor checkout into a transactional service that atomically creates users, enrollments, payments, and audit logs.
-5. Protect administrative endpoints with authentication/authorization and redesign the financial report query to avoid N+1 access patterns.
+5. [FIXED] Protect administrative endpoints with authentication/authorization and redesign the financial report query to avoid N+1 access patterns.
 6. Enforce referential integrity in the schema and redesign destructive user deletion to preserve consistent domain state.
 7. Add centralized request validation and standardized error handling for all endpoints.
 8. Remove hidden global mutable state from `utils.js` and replace it with explicit collaborators or eliminate it entirely.

@@ -35,7 +35,7 @@ function loadEnvFile(filePath) {
 
 loadEnvFile(ENV_PATH);
 
-const requiredKeys = ['DB_USER', 'DB_PASS', 'PAYMENT_GATEWAY_KEY', 'SMTP_USER'];
+const requiredKeys = ['DB_USER', 'DB_PASS', 'PAYMENT_GATEWAY_KEY', 'SMTP_USER', 'ADMIN_API_TOKEN'];
 
 for (const key of requiredKeys) {
     if (!process.env[key]) {
@@ -48,6 +48,7 @@ const config = {
     dbPass: process.env.DB_PASS,
     paymentGatewayKey: process.env.PAYMENT_GATEWAY_KEY,
     smtpUser: process.env.SMTP_USER,
+    adminApiToken: process.env.ADMIN_API_TOKEN,
     port: Number(process.env.PORT || 3000),
 };
 
