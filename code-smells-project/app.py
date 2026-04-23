@@ -31,8 +31,8 @@ def create_app():
     app = Flask(__name__)
     app.config.from_object(Config)
 
-    if app.config["APP_ENV"] != "development" and not app.config["SECRET_KEY"]:
-        raise RuntimeError("SECRET_KEY must be configured outside development")
+    if app.config["APP_ENV"] != "development" and Config.uses_placeholder_secret():
+        raise RuntimeError("SECRET_KEY must be configured with a non-placeholder value outside development")
 
     if app.config["CORS_ORIGINS"]:
         CORS(app, resources={r"/*": {"origins": app.config["CORS_ORIGINS"]}})

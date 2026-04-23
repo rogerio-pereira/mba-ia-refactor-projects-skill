@@ -1,4 +1,5 @@
 .env
+code-smells-project/.env
 node_modules/
 
 # Python

@@ -4,6 +4,7 @@ from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent
 ENV_FILE = BASE_DIR / ".env"
+SECRET_KEY_PLACEHOLDERS = {"", "change-me", "dev-only-secret", "dev-only-placeholder"}
 
 
 def load_env_file(path=ENV_FILE):
@@ -43,3 +44,7 @@ class Config:
     CORS_ORIGINS = _split_csv("CORS_ORIGINS", "")
     HOST = os.getenv("HOST", "0.0.0.0")
     PORT = int(os.getenv("PORT", "5000"))
+
+    @classmethod
+    def uses_placeholder_secret(cls):
+        return cls.SECRET_KEY.strip() in SECRET_KEY_PLACEHOLDERS
