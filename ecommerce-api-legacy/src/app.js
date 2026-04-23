@@ -1,13 +1,6 @@
-const express = require('express');
-const AppManager = require('./AppManager');
-const { config } = require('./config');
+const { createApp } = require('./createApp');
 
-const app = express();
-app.use(express.json());
-
-const manager = new AppManager();
-manager.initDb();
-manager.setupRoutes(app);
+const { app, config } = createApp();
 
 app.listen(config.port, () => {
     console.log(`Frankenstein LMS rodando na porta ${config.port}...`);

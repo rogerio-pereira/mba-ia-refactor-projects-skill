@@ -44,13 +44,14 @@ Recommendation: Move runtime secrets into an environment-aware config module, re
 MVC Target: Config  
 Validation: `node -e "const { config } = require('./ecommerce-api-legacy/src/config'); ..."` passed and a boot smoke test for `src/app.js` passed after installing dependencies with `npm ci`.  
 
-### [CRITICAL] God Class Mixes Bootstrapping, Routing, Business Rules, Persistence, And Reporting
+### [FIXED] [CRITICAL] God Class Mixes Bootstrapping, Routing, Business Rules, Persistence, And Reporting
 File: `ecommerce-api-legacy/src/AppManager.js:1-138`  
 Category: Architecture | Maintainability  
 Description: `AppManager` is responsible for database connection lifecycle, schema creation, seeding, route registration, validation, checkout orchestration, payment decisions, audit logging, reporting assembly, and destructive user deletion.  
 Impact: This concentration of responsibilities makes the application hard to test, hard to change safely, and incompatible with maintainable MVC boundaries. A change in one use case can easily regress unrelated areas.  
 Recommendation: Split the code into a composition root plus dedicated route/controller, service, repository/model, config, and middleware modules while preserving the current HTTP contract.  
 MVC Target: Composition Root  
+Validation: `node -e "const { createApp } = require('./ecommerce-api-legacy/src/createApp'); ..."` passed with smoke checks for checkout, report, and delete routes.  
 
 ### [HIGH] Checkout Flow Uses Weak Password Hashing And Unsafe Default Password Fallback
 File: `ecommerce-api-legacy/src/AppManager.js:66-71`, `ecommerce-api-legacy/src/utils.js:17-23`  
@@ -108,13 +109,14 @@ Impact: Hidden shared state complicates reasoning, testing, and future concurren
 Recommendation: Remove unused globals, inject explicit collaborators where needed, and isolate caching behind a dedicated service with a clear lifecycle.  
 MVC Target: Service  
 
-### [LOW] Composition Root Is Minimal And Keeps Boot Logic Tightly Coupled To Concrete Implementation
+### [FIXED] [LOW] Composition Root Is Minimal And Keeps Boot Logic Tightly Coupled To Concrete Implementation
 File: `ecommerce-api-legacy/src/app.js:1-13`  
 Category: Architecture  
 Description: `app.js` directly instantiates `AppManager`, initializes the database, registers routes, and starts the server with no app factory, dependency wiring boundary, or test-friendly composition mechanism.  
 Impact: Bootstrapping is hard to customize for tests or alternative environments, and the application remains tightly coupled to one concrete implementation path.  
 Recommendation: Introduce an application factory/composition root that wires config, database, repositories, services, routes, and server startup separately.  
 MVC Target: Composition Root  
+Validation: `node -e "const { spawn } = require('child_process'); ..."` passed and confirmed `src/app.js` still boots after introducing `createApp()`.  
 
 ## Deprecated API Detection
 
@@ -123,13 +125,13 @@ No clearly deprecated Express 4.18.2 APIs were identified in the analyzed files.
 ## Proposed Phase 3 Refactoring Plan
 
 1. [FIXED] Extract environment-aware configuration and remove all hardcoded secrets, seeded real credentials, and sensitive logs.
-2. Split `AppManager` into composition root, routes/controllers, services, repositories/models, and middleware following MVC boundaries.
+2. [FIXED] Split `AppManager` into composition root, routes/controllers, services, repositories/models, and middleware following MVC boundaries.
 3. Replace `badCrypto` with a real password hashing strategy and require explicit validated credentials in checkout.
 4. Refactor checkout into a transactional service that atomically creates users, enrollments, payments, and audit logs.
 5. Protect administrative endpoints with authentication/authorization and redesign the financial report query to avoid N+1 access patterns.
 6. Enforce referential integrity in the schema and redesign destructive user deletion to preserve consistent domain state.
 7. Add centralized request validation and standardized error handling for all endpoints.
 8. Remove hidden global mutable state from `utils.js` and replace it with explicit collaborators or eliminate it entirely.
-9. Introduce an application factory to decouple bootstrapping from runtime server start.
+9. [FIXED] Introduce an application factory to decouple bootstrapping from runtime server start.
 
 Phase 2 complete. Proceed with MVC refactoring (Phase 3)? [y/n]
