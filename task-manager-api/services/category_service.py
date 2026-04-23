@@ -1,6 +1,7 @@
 from sqlalchemy import func
 
 from database import db
+from errors import ApiError, NotFoundError, ValidationError
 from models.category import Category
 from models.task import Task
 from services.validation_service import ValidationService
@@ -27,7 +28,7 @@ class CategoryService:
     def create_category(self, data):
         normalized, error = self.validation_service.validate_category_payload(data)
         if error:
-            return {'error': error}, 400
+            raise ValidationError(error)
 
         category = Category()
         category.name = normalized['name']
@@ -37,19 +38,19 @@ class CategoryService:
         try:
             db.session.add(category)
             db.session.commit()
-            return category.to_dict(), 201
-        except Exception:
+            return category.to_dict()
+        except Exception as exc:
             db.session.rollback()
-            return {'error': 'Erro ao criar categoria'}, 500
+            raise ApiError('Erro ao criar categoria') from exc
 
     def update_category(self, cat_id, data):
         category = Category.query.get(cat_id)
         if not category:
-            return {'error': 'Categoria não encontrada'}, 404
+            raise NotFoundError('Categoria não encontrada')
 
         normalized, error = self.validation_service.validate_category_payload(data, partial=True)
         if error:
-            return {'error': error}, 400
+            raise ValidationError(error)
 
         for field in ['name', 'description', 'color']:
             if field in normalized:
@@ -57,20 +58,20 @@ class CategoryService:
 
         try:
             db.session.commit()
-            return category.to_dict(), 200
-        except Exception:
+            return category.to_dict()
+        except Exception as exc:
             db.session.rollback()
-            return {'error': 'Erro ao atualizar'}, 500
+            raise ApiError('Erro ao atualizar') from exc
 
     def delete_category(self, cat_id):
         category = Category.query.get(cat_id)
         if not category:
-            return {'error': 'Categoria não encontrada'}, 404
+            raise NotFoundError('Categoria não encontrada')
 
         try:
             db.session.delete(category)
             db.session.commit()
-            return {'message': 'Categoria deletada'}, 200
-        except Exception:
+            return {'message': 'Categoria deletada'}
+        except Exception as exc:
             db.session.rollback()
-            return {'error': 'Erro ao deletar'}, 500
+            raise ApiError('Erro ao deletar') from exc

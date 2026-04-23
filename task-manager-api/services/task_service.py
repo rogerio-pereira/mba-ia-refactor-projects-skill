@@ -3,6 +3,7 @@ from datetime import datetime
 from sqlalchemy.orm import joinedload
 
 from database import db
+from errors import ApiError, NotFoundError, ValidationError
 from models.category import Category
 from models.task import Task
 from models.user import User
@@ -44,7 +45,7 @@ class TaskService:
     def get_task(self, task_id):
         task = Task.query.get(task_id)
         if not task:
-            return None
+            raise NotFoundError('Task não encontrada')
 
         data = task.to_dict()
         data['overdue'] = task.is_overdue()
@@ -53,17 +54,17 @@ class TaskService:
     def create_task(self, data):
         normalized, error = self.validation_service.validate_task_payload(data)
         if error:
-            return {'error': error}, 400
+            raise ValidationError(error)
 
         if normalized['user_id']:
             user = User.query.get(normalized['user_id'])
             if not user:
-                return {'error': 'Usuário não encontrado'}, 404
+                raise NotFoundError('Usuário não encontrado')
 
         if normalized['category_id']:
             category = Category.query.get(normalized['category_id'])
             if not category:
-                return {'error': 'Categoria não encontrada'}, 404
+                raise NotFoundError('Categoria não encontrada')
 
         task = Task()
         task.title = normalized['title']
@@ -78,32 +79,32 @@ class TaskService:
         try:
             db.session.add(task)
             db.session.commit()
-            return task.to_dict(), 201
-        except Exception:
+            return task.to_dict()
+        except Exception as exc:
             db.session.rollback()
-            return {'error': 'Erro ao criar task'}, 500
+            raise ApiError('Erro ao criar task') from exc
 
     def update_task(self, task_id, data):
         task = Task.query.get(task_id)
         if not task:
-            return {'error': 'Task não encontrada'}, 404
+            raise NotFoundError('Task não encontrada')
 
         normalized, error = self.validation_service.validate_task_payload(data, partial=True)
         if error:
-            return {'error': error}, 400
+            raise ValidationError(error)
 
         if 'user_id' in normalized:
             if normalized['user_id']:
                 user = User.query.get(normalized['user_id'])
                 if not user:
-                    return {'error': 'Usuário não encontrado'}, 404
+                    raise NotFoundError('Usuário não encontrado')
             task.user_id = normalized['user_id']
 
         if 'category_id' in normalized:
             if normalized['category_id']:
                 category = Category.query.get(normalized['category_id'])
                 if not category:
-                    return {'error': 'Categoria não encontrada'}, 404
+                    raise NotFoundError('Categoria não encontrada')
             task.category_id = normalized['category_id']
 
         for field in ['title', 'description', 'status', 'priority', 'due_date', 'tags']:
@@ -114,23 +115,23 @@ class TaskService:
 
         try:
             db.session.commit()
-            return task.to_dict(), 200
-        except Exception:
+            return task.to_dict()
+        except Exception as exc:
             db.session.rollback()
-            return {'error': 'Erro ao atualizar'}, 500
+            raise ApiError('Erro ao atualizar') from exc
 
     def delete_task(self, task_id):
         task = Task.query.get(task_id)
         if not task:
-            return {'error': 'Task não encontrada'}, 404
+            raise NotFoundError('Task não encontrada')
 
         try:
             db.session.delete(task)
             db.session.commit()
-            return {'message': 'Task deletada com sucesso'}, 200
-        except Exception:
+            return {'message': 'Task deletada com sucesso'}
+        except Exception as exc:
             db.session.rollback()
-            return {'error': 'Erro ao deletar'}, 500
+            raise ApiError('Erro ao deletar') from exc
 
     def search_tasks(self, filters):
         tasks = Task.query

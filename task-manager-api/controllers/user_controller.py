@@ -11,30 +11,24 @@ def get_users():
 
 
 def get_user(user_id):
-    response, status_code = user_service.get_user(user_id)
-    return jsonify(response), status_code
+    return jsonify(user_service.get_user(user_id)), 200
 
 
 def create_user():
-    response, status_code = user_service.create_user(request.get_json())
-    return jsonify(response), status_code
+    return jsonify(user_service.create_user(request.get_json())), 201
 
 
 def update_user(user_id):
-    response, status_code = user_service.update_user(user_id, request.get_json())
-    return jsonify(response), status_code
+    return jsonify(user_service.update_user(user_id, request.get_json())), 200
 
 
 def delete_user(user_id):
-    response, status_code = user_service.delete_user(user_id)
-    return jsonify(response), status_code
+    return jsonify(user_service.delete_user(user_id)), 200
 
 
 def get_user_tasks(user_id):
-    response, status_code = user_service.get_user_tasks(user_id)
-    return jsonify(response), status_code
+    return jsonify(user_service.get_user_tasks(user_id)), 200
 
 
 def login():
-    response, status_code = user_service.login(request.get_json())
-    return jsonify(response), status_code
+    return jsonify(user_service.login(request.get_json())), 200

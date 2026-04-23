@@ -13,8 +13,7 @@ def summary_report():
 
 
 def user_report(user_id):
-    response, status_code = report_service.user_report(user_id)
-    return jsonify(response), status_code
+    return jsonify(report_service.user_report(user_id)), 200
 
 
 def get_categories():
@@ -22,15 +21,12 @@ def get_categories():
 
 
 def create_category():
-    response, status_code = category_service.create_category(request.get_json())
-    return jsonify(response), status_code
+    return jsonify(category_service.create_category(request.get_json())), 201
 
 
 def update_category(cat_id):
-    response, status_code = category_service.update_category(cat_id, request.get_json())
-    return jsonify(response), status_code
+    return jsonify(category_service.update_category(cat_id, request.get_json())), 200
 
 
 def delete_category(cat_id):
-    response, status_code = category_service.delete_category(cat_id)
-    return jsonify(response), status_code
+    return jsonify(category_service.delete_category(cat_id)), 200

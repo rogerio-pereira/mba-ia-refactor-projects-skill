@@ -1,5 +1,6 @@
 from config import Config
 from database import db
+from errors import ApiError, ConflictError, NotFoundError, ValidationError
 from models.task import Task
 from models.user import User
 from services.auth_service import AuthService
@@ -28,19 +29,19 @@ class UserService:
     def get_user(self, user_id):
         user = User.query.get(user_id)
         if not user:
-            return {'error': 'Usuário não encontrado'}, 404
+            raise NotFoundError('Usuário não encontrado')
 
         data = user.to_dict()
         data['tasks'] = [task.to_dict() for task in Task.query.filter_by(user_id=user_id).all()]
-        return data, 200
+        return data
 
     def create_user(self, data):
         normalized, error = self.validation_service.validate_user_payload(data)
         if error:
-            return {'error': error}, 400
+            raise ValidationError(error)
 
         if User.query.filter_by(email=normalized['email']).first():
-            return {'error': 'Email já cadastrado'}, 409
+            raise ConflictError('Email já cadastrado')
 
         user = User()
         user.name = normalized['name']
@@ -51,19 +52,19 @@ class UserService:
         try:
             db.session.add(user)
             db.session.commit()
-            return user.to_dict(), 201
-        except Exception:
+            return user.to_dict()
+        except Exception as exc:
             db.session.rollback()
-            return {'error': 'Erro ao criar usuário'}, 500
+            raise ApiError('Erro ao criar usuário') from exc
 
     def update_user(self, user_id, data):
         user = User.query.get(user_id)
         if not user:
-            return {'error': 'Usuário não encontrado'}, 404
+            raise NotFoundError('Usuário não encontrado')
 
         normalized, error = self.validation_service.validate_user_payload(data, partial=True)
         if error:
-            return {'error': error}, 400
+            raise ValidationError(error)
 
         if 'name' in normalized:
             user.name = normalized['name']
@@ -71,7 +72,7 @@ class UserService:
         if 'email' in normalized:
             existing = User.query.filter_by(email=normalized['email']).first()
             if existing and existing.id != user_id:
-                return {'error': 'Email já cadastrado'}, 409
+                raise ConflictError('Email já cadastrado')
             user.email = normalized['email']
 
         if 'password' in normalized:
@@ -85,15 +86,15 @@ class UserService:
 
         try:
             db.session.commit()
-            return user.to_dict(), 200
-        except Exception:
+            return user.to_dict()
+        except Exception as exc:
             db.session.rollback()
-            return {'error': 'Erro ao atualizar'}, 500
+            raise ApiError('Erro ao atualizar') from exc
 
     def delete_user(self, user_id):
         user = User.query.get(user_id)
         if not user:
-            return {'error': 'Usuário não encontrado'}, 404
+            raise NotFoundError('Usuário não encontrado')
 
         for task in Task.query.filter_by(user_id=user_id).all():
             db.session.delete(task)
@@ -101,15 +102,15 @@ class UserService:
         try:
             db.session.delete(user)
             db.session.commit()
-            return {'message': 'Usuário deletado com sucesso'}, 200
-        except Exception:
+            return {'message': 'Usuário deletado com sucesso'}
+        except Exception as exc:
             db.session.rollback()
-            return {'error': 'Erro ao deletar'}, 500
+            raise ApiError('Erro ao deletar') from exc
 
     def get_user_tasks(self, user_id):
         user = User.query.get(user_id)
         if not user:
-            return {'error': 'Usuário não encontrado'}, 404
+            raise NotFoundError('Usuário não encontrado')
 
         result = []
         for task in Task.query.filter_by(user_id=user_id).all():
@@ -123,25 +124,25 @@ class UserService:
                 'due_date': str(task.due_date) if task.due_date else None,
                 'overdue': task.is_overdue(),
             })
-        return result, 200
+        return result
 
     def login(self, data):
         if not data:
-            return {'error': 'Dados inválidos'}, 400
+            raise ValidationError('Dados inválidos')
 
         email = data.get('email')
         password = data.get('password')
 
         if not email or not password:
-            return {'error': 'Email e senha são obrigatórios'}, 400
+            raise ValidationError('Email e senha são obrigatórios')
 
         user = User.query.filter_by(email=email).first()
         if not user:
-            return {'error': 'Credenciais inválidas'}, 401
+            raise ValidationError('Credenciais inválidas', status_code=401)
         if not user.check_password(password):
-            return {'error': 'Credenciais inválidas'}, 401
+            raise ValidationError('Credenciais inválidas', status_code=401)
         if not user.active:
-            return {'error': 'Usuário inativo'}, 403
+            raise ValidationError('Usuário inativo', status_code=403)
 
         if self.auth_service.needs_rehash(user.password):
             user.password = self.auth_service.hash_password(password)
@@ -151,4 +152,4 @@ class UserService:
             'message': 'Login realizado com sucesso',
             'user': user.to_dict(),
             'token': self.auth_service.generate_token(user),
-        }, 200
+        }

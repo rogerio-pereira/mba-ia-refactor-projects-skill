@@ -2,6 +2,7 @@ from datetime import datetime, timedelta
 
 from sqlalchemy import func
 
+from errors import NotFoundError
 from models.category import Category
 from models.task import Task
 from models.user import User
@@ -91,7 +92,7 @@ class ReportService:
     def user_report(self, user_id):
         user = User.query.get(user_id)
         if not user:
-            return {'error': 'Usuário não encontrado'}, 404
+            raise NotFoundError('Usuário não encontrado')
 
         tasks = Task.query.filter_by(user_id=user_id).all()
         done = 0
@@ -133,4 +134,4 @@ class ReportService:
                 'high_priority': high_priority,
                 'completion_rate': round((done / total) * 100, 2) if total > 0 else 0,
             }
-        }, 200
+        }

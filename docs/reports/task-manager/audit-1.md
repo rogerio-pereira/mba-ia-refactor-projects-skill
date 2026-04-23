@@ -85,13 +85,15 @@ MVC Target: Service
 Fixed by introducing `services/validation_service.py` and routing task, user, and category payload validation through one normalization layer that reuses helpers and constants from `utils/helpers.py`.
 Validation: `python3 -m py_compile task-manager-api/services/validation_service.py task-manager-api/services/task_service.py task-manager-api/services/user_service.py task-manager-api/services/category_service.py` passed. `PYTHONPATH=task-manager-api python3` smoke checks verified normalized task, user, and category payloads.
 
-### [MEDIUM] Error Handling Is Inconsistent And Frequently Hides Failure Causes
+### [FIXED] [MEDIUM] Error Handling Is Inconsistent And Frequently Hides Failure Causes
 File: `task-manager-api/routes/task_routes.py:13-63`, `task-manager-api/routes/task_routes.py:146-154`, `task-manager-api/routes/task_routes.py:217-238`, `task-manager-api/routes/user_routes.py:80-90`, `task-manager-api/routes/user_routes.py:127-132`, `task-manager-api/routes/user_routes.py:144-151`, `task-manager-api/routes/report_routes.py:182-223`, `task-manager-api/utils/helpers.py:43-50`, `task-manager-api/utils/helpers.py:81-89`  
 Category: Reliability | Maintainability  
 Description: Many endpoints use broad `except:` or generic `except Exception` blocks, often returning a generic message without structured logging or preserving the failure context. Error responses vary by route, and helper functions swallow parsing/type errors and return `None`, forcing callers to infer what happened.  
 Impact: Production failures become hard to diagnose, clients receive inconsistent response contracts, and bugs can be silently masked until they surface as corrupted state or incorrect behavior.  
 Recommendation: Introduce centralized error handling, replace bare `except:` blocks with narrow exceptions, standardize JSON error payloads, and log enough context for operational debugging without leaking secrets.  
 MVC Target: Middleware  
+Fixed by introducing typed API exceptions plus centralized Flask error handlers in `middleware/error_handlers.py`, and by moving service failures to explicit `ValidationError`, `NotFoundError`, `ConflictError`, and `ApiError` flows.
+Validation: `python3 -m py_compile task-manager-api/app.py task-manager-api/errors.py task-manager-api/middleware/error_handlers.py task-manager-api/controllers/task_controller.py task-manager-api/controllers/user_controller.py task-manager-api/controllers/report_controller.py task-manager-api/services/task_service.py task-manager-api/services/user_service.py task-manager-api/services/report_service.py task-manager-api/services/category_service.py` passed. `PYTHONPATH=task-manager-api python3` smoke checks verified exception status codes.
 
 ### [MEDIUM] The Codebase Relies On Legacy `Query.get()` Calls Instead Of SQLAlchemy 2 Style Session Access
 File: `task-manager-api/routes/task_routes.py:42`, `task-manager-api/routes/task_routes.py:51`, `task-manager-api/routes/task_routes.py:67`, `task-manager-api/routes/task_routes.py:117`, `task-manager-api/routes/task_routes.py:122`, `task-manager-api/routes/task_routes.py:158`, `task-manager-api/routes/task_routes.py:188`, `task-manager-api/routes/task_routes.py:195`, `task-manager-api/routes/task_routes.py:227`, `task-manager-api/routes/user_routes.py:29`, `task-manager-api/routes/user_routes.py:94`, `task-manager-api/routes/user_routes.py:136`, `task-manager-api/routes/user_routes.py:155`, `task-manager-api/routes/report_routes.py:105`, `task-manager-api/routes/report_routes.py:192`, `task-manager-api/routes/report_routes.py:213`  
@@ -120,7 +122,7 @@ The dominant framework-level deprecation issue in the analyzed scope is repeated
 3. [FIXED] Split each route module into thinner HTTP adapters plus controller/service layers for tasks, users, reports, and categories.
 4. [FIXED] Centralize validation and normalization for task, user, and category payloads using shared schemas or a consistent helper/service layer.
 5. [FIXED] Refactor list and report queries to avoid N+1 access patterns by using eager loading or aggregate SQL queries.
-6. Introduce centralized error handling and structured logging instead of broad bare exceptions.
+6. [FIXED] Introduce centralized error handling and structured logging instead of broad bare exceptions.
 7. Replace legacy `Query.get()` usage with `db.session.get(...)` and move ORM access behind clearer boundaries.
 8. Create an application factory/composition root so app creation, DB initialization, seeding, and server startup are decoupled.
 

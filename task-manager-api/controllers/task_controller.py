@@ -11,25 +11,19 @@ def get_tasks():
 
 
 def get_task(task_id):
-    task = task_service.get_task(task_id)
-    if not task:
-        return jsonify({'error': 'Task não encontrada'}), 404
-    return jsonify(task), 200
+    return jsonify(task_service.get_task(task_id)), 200
 
 
 def create_task():
-    response, status_code = task_service.create_task(request.get_json())
-    return jsonify(response), status_code
+    return jsonify(task_service.create_task(request.get_json())), 201
 
 
 def update_task(task_id):
-    response, status_code = task_service.update_task(task_id, request.get_json())
-    return jsonify(response), status_code
+    return jsonify(task_service.update_task(task_id, request.get_json())), 200
 
 
 def delete_task(task_id):
-    response, status_code = task_service.delete_task(task_id)
-    return jsonify(response), status_code
+    return jsonify(task_service.delete_task(task_id)), 200
 
 
 def search_tasks():
