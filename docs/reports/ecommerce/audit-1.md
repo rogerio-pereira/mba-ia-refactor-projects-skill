@@ -107,13 +107,14 @@ Recommendation: Introduce centralized error handling middleware, standardize res
 MVC Target: Middleware  
 Validation: centralized error middleware now returns JSON errors for invalid checkout payloads and invalid user IDs, while boot smoke tests still pass.  
 
-### [MEDIUM] Hidden Global Mutable State In Utility Module Creates Uncontrolled Side Effects
+### [FIXED] [MEDIUM] Hidden Global Mutable State In Utility Module Creates Uncontrolled Side Effects
 File: `ecommerce-api-legacy/src/utils.js:9-15`, `ecommerce-api-legacy/src/AppManager.js:57-60`  
 Category: Architecture | Maintainability  
 Description: `globalCache` is a module-level mutable object modified by `logAndCache`, and checkout writes into it as a side effect of successful enrollment. `totalRevenue` is also exported globally but never used.  
 Impact: Hidden shared state complicates reasoning, testing, and future concurrency behavior while adding dead or misleading infrastructure.  
 Recommendation: Remove unused globals, inject explicit collaborators where needed, and isolate caching behind a dedicated service with a clear lifecycle.  
 MVC Target: Service  
+Validation: checkout still succeeds and the in-memory cache is now observable through the app-owned cache service instead of module-level globals.  
 
 ### [FIXED] [LOW] Composition Root Is Minimal And Keeps Boot Logic Tightly Coupled To Concrete Implementation
 File: `ecommerce-api-legacy/src/app.js:1-13`  
@@ -137,7 +138,7 @@ No clearly deprecated Express 4.18.2 APIs were identified in the analyzed files.
 5. [FIXED] Protect administrative endpoints with authentication/authorization and redesign the financial report query to avoid N+1 access patterns.
 6. [FIXED] Enforce referential integrity in the schema and redesign destructive user deletion to preserve consistent domain state.
 7. [FIXED] Add centralized request validation and standardized error handling for all endpoints.
-8. Remove hidden global mutable state from `utils.js` and replace it with explicit collaborators or eliminate it entirely.
+8. [FIXED] Remove hidden global mutable state from `utils.js` and replace it with explicit collaborators or eliminate it entirely.
 9. [FIXED] Introduce an application factory to decouple bootstrapping from runtime server start.
 
 Phase 2 complete. Proceed with MVC refactoring (Phase 3)? [y/n]

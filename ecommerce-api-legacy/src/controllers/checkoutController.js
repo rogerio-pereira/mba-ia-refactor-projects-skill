@@ -1,9 +1,8 @@
-const { logAndCache } = require('../utils');
 const { createHttpError } = require('../errors/httpError');
 const { checkout: runCheckout } = require('../services/checkoutService');
 const { normalizeCheckoutPayload, validateCheckoutPayload } = require('../validation/checkoutValidator');
 
-function createCheckoutController({ db }) {
+function createCheckoutController({ db, cacheService }) {
     return async function checkout(req, res) {
         const payload = normalizeCheckoutPayload(req.body);
         const validationErrors = validateCheckoutPayload(payload);
@@ -20,9 +19,7 @@ function createCheckoutController({ db }) {
                 ...payload,
                 courseId: Number(payload.courseId),
             },
-            cacheService: {
-                store: logAndCache,
-            },
+            cacheService,
         });
 
         return res.status(200).json(result);
