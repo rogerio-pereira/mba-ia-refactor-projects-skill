@@ -168,13 +168,14 @@ Recommendation: Add centralized error handling with safe public messages and str
 MVC Target: Middleware  
 Validation: `python3 -m py_compile app.py config.py controllers.py database.py models.py product_repository.py user_repository.py order_repository.py report_repository.py auth_service.py order_service.py validators.py errors.py constants.py` passed; `app.test_client()` smoke test confirmed validation failures are handled centrally with standard JSON responses.  
 
-### [LOW] Database Bootstrap And Seed Data Are Hidden Inside Connection Access
+### [FIXED] [LOW] Database Bootstrap And Seed Data Are Hidden Inside Connection Access
 File: `code-smells-project/database.py:7-84`  
 Category: Architecture  
 Description: `get_db()` not only opens a connection but also creates tables and inserts seed data when the products table is empty.  
 Impact: A simple read path triggers schema/bootstrap behavior, which makes startup semantics unclear and complicates testing and production hardening.  
 Recommendation: Move schema creation and seeding into explicit initialization commands or a dedicated startup routine.  
 MVC Target: Composition Root  
+Validation: `python3 -m py_compile app.py config.py controllers.py database.py models.py product_repository.py user_repository.py order_repository.py report_repository.py auth_service.py order_service.py validators.py errors.py constants.py` passed; `app.test_client()` smoke test confirmed the app boots and serves `/produtos` after explicit startup initialization.  
 
 ### [FIXED] [LOW] Domain Constants And Environment Labels Are Hardcoded In Multiple Layers
 File: `code-smells-project/controllers.py:52-54`, `code-smells-project/controllers.py:242-243`, `code-smells-project/controllers.py:285-289`, `code-smells-project/database.py:5`  
@@ -199,7 +200,7 @@ No deprecated Flask API usage was identified in the inspected files. The main is
 6. [FIXED] Hash passwords, verify them safely during login, and remove password fields from all API serializers.
 7. [FIXED] Extract request validation and add centralized error handling for consistent HTTP error responses.
 8. [FIXED] Rewrite order retrieval paths to avoid N+1 queries and share the retrieval logic between list variants.
-9. Move schema creation and seed loading out of `get_db()` into an explicit initialization path.
+9. [FIXED] Move schema creation and seed loading out of `get_db()` into an explicit initialization path.
 10. Re-validate all existing routes to preserve endpoint compatibility while improving separation of responsibilities.
 
 Phase 2 complete. Proceed with MVC refactoring (Phase 3)? [y/n]
