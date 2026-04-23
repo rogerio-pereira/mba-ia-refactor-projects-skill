@@ -14,10 +14,6 @@ def _require_dict(data):
     return data
 
 
-def parse_json_payload(data):
-    return _require_dict(data)
-
-
 def validate_produto_payload(data):
     data = _require_dict(data)
 

@@ -8,7 +8,6 @@ import report_service
 import user_repository
 from validators import (
     parse_busca_params,
-    parse_json_payload,
     validate_login_payload,
     validate_pedido_payload,
     validate_produto_payload,

@@ -89,13 +89,14 @@ Recommendation: Limitar o repositório à coleta de dados agregados e mover o c�
 MVC Target: Service  
 Validation: `python3 -m py_compile code-smells-project/*.py` passed; `GET /relatorios/vendas` still returns the same response fields after moving discount logic to `report_service.py`.
 
-### [MEDIUM] Artefatos legados e código morto obscurecem a arquitetura real
+### [FIXED] [MEDIUM] Artefatos legados e código morto obscurecem a arquitetura real
 File: `code-smells-project/models.py:1-25`, `code-smells-project/user_repository.py:42-49`, `code-smells-project/controllers.py:9-17`, `code-smells-project/validators.py:11-12`  
 Category: Maintainability  
 Description: `models.py` atua apenas como fachada de aliases para serviços e repositórios, mas não é usado pelo fluxo principal. Além disso, `get_usuario_por_email_e_senha()` e `parse_json_payload()` permanecem definidos sem uso. Esses artefatos sugerem uma arquitetura anterior e criam uma superfície de manutenção enganosa.  
 Impact: Novos desenvolvedores tendem a inferir boundaries errados, aumentando risco de regressão ou duplicação ao adicionar funcionalidades. Código morto também preserva APIs perigosas, como a busca por senha em texto puro.  
 Recommendation: Remover a fachada legada e funções não utilizadas, ou documentar explicitamente uma camada de compatibilidade se ela for necessária.  
 MVC Target: Composition Root  
+Validation: `python3 -m py_compile code-smells-project/*.py` passed; smoke checks for `GET /produtos` and `POST /login` still succeed after removing the unused facade and dead helpers.
 
 ### [LOW] Logging operacional usa `print` e expõe dados de negócio sem padronização
 File: `code-smells-project/controllers.py:19-22`, `code-smells-project/controllers.py:30-34`, `code-smells-project/controllers.py:45-52`, `code-smells-project/controllers.py:69-83`, `code-smells-project/notification_service.py:1-11`, `code-smells-project/app.py:75-78`  
@@ -125,7 +126,7 @@ Nenhum uso claramente depreciado de Flask 3.1.1 foi identificado nos arquivos an
 4. [FIXED] Reforçar o schema SQLite com constraints reais (`NOT NULL`, `UNIQUE`, `FOREIGN KEY`) e alinhar validadores ao novo contrato.
 5. [FIXED] Extrair consultas operacionais de `health_check()` para uma camada própria de serviço/repositório.
 6. [FIXED] Separar a lógica de desconto do `report_repository` e mantê-la em um serviço de domínio.
-7. Eliminar código morto e camadas de compatibilidade que não participam do fluxo ativo.
+7. [FIXED] Eliminar código morto e camadas de compatibilidade que não participam do fluxo ativo.
 8. Substituir `print` por logging estruturado e consolidar serializers repetidos.
 
 Phase 2 complete. Proceed with MVC refactoring (Phase 3)? [y/n]

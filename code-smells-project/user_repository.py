@@ -37,18 +37,6 @@ def get_usuario_por_email(email):
     cursor = db.cursor()
     cursor.execute("SELECT * FROM usuarios WHERE email = ?", (email,))
     return cursor.fetchone()
-
-
-def get_usuario_por_email_e_senha(email, senha):
-    db = get_db()
-    cursor = db.cursor()
-    cursor.execute(
-        "SELECT * FROM usuarios WHERE email = ? AND senha = ?",
-        (email, senha),
-    )
-    return cursor.fetchone()
-
-
 def criar_usuario(nome, email, senha, tipo="cliente"):
     db = get_db()
     cursor = db.cursor()
