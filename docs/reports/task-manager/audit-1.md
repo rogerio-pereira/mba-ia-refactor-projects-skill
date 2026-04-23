@@ -105,13 +105,15 @@ MVC Target: Model
 Fixed by replacing all remaining entity lookups in services with `db.session.get(...)` after ORM access was centralized out of the route layer.
 Validation: `python3 -m py_compile task-manager-api/services/task_service.py task-manager-api/services/category_service.py task-manager-api/services/user_service.py task-manager-api/services/report_service.py` passed. `rg -n "query\\.get\\(" task-manager-api` returned no matches.
 
-### [MEDIUM] Application Bootstrap Has Import-Time Side Effects And No Clear Composition Root Boundary
+### [FIXED] [MEDIUM] Application Bootstrap Has Import-Time Side Effects And No Clear Composition Root Boundary
 File: `task-manager-api/app.py:9-34`, `task-manager-api/seed.py:2-14`  
 Category: Architecture | Reliability  
 Description: `app.py` creates the Flask app, configures extensions, registers blueprints, creates tables inside `with app.app_context(): db.create_all()`, and starts the server from the same module. `seed.py` imports `app` and `db` from that module, so merely importing the application performs database bootstrapping side effects.  
 Impact: Startup behavior is hard to control in tests and scripts, infrastructure concerns are mixed with runtime entrypoint logic, and alternative configurations cannot be injected cleanly.  
 Recommendation: Introduce an application factory or composition root that wires config, extensions, routes, and database initialization explicitly, leaving server startup and seed execution as separate entrypoints.  
 MVC Target: Composition Root  
+Fixed by introducing `app_factory.py:create_app()`, moving application wiring into a dedicated composition root, limiting `db.create_all()` to explicit runtime/seed flows, and making `seed.py` build the app directly instead of depending on import-time side effects.
+Validation: `python3 -m py_compile task-manager-api/app.py task-manager-api/app_factory.py task-manager-api/seed.py` passed.
 
 ## Deprecated API Detection
 
@@ -126,6 +128,6 @@ The dominant framework-level deprecation issue in the analyzed scope is repeated
 5. [FIXED] Refactor list and report queries to avoid N+1 access patterns by using eager loading or aggregate SQL queries.
 6. [FIXED] Introduce centralized error handling and structured logging instead of broad bare exceptions.
 7. [FIXED] Replace legacy `Query.get()` usage with `db.session.get(...)` and move ORM access behind clearer boundaries.
-8. Create an application factory/composition root so app creation, DB initialization, seeding, and server startup are decoupled.
+8. [FIXED] Create an application factory/composition root so app creation, DB initialization, seeding, and server startup are decoupled.
 
 Phase 2 complete. Proceed with MVC refactoring (Phase 3)? [y/n]

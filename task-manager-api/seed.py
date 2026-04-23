@@ -1,12 +1,17 @@
 """Script para popular o banco com dados iniciais"""
-from app import app, db
+from app_factory import create_app
+from database import db
 from models.task import Task
 from models.user import User
 from models.category import Category
 from datetime import datetime, timedelta
 
+
+app = create_app()
+
 def seed_data():
     with app.app_context():
+        db.create_all()
 
         Task.query.delete()
         User.query.delete()
