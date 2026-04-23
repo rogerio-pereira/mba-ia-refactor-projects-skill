@@ -1,6 +1,7 @@
 from database import db
 from datetime import datetime
-import hashlib
+
+from services.auth_service import AuthService
 
 class User(db.Model):
     __tablename__ = 'users'
@@ -18,18 +19,18 @@ class User(db.Model):
             'id': self.id,
             'name': self.name,
             'email': self.email,
-            'password': self.password,
             'role': self.role,
             'active': self.active,
             'created_at': str(self.created_at)
         }
 
     def set_password(self, pwd):
-
-        self.password = hashlib.md5(pwd.encode()).hexdigest()
+        auth_service = AuthService()
+        self.password = auth_service.hash_password(pwd)
 
     def check_password(self, pwd):
-        return self.password == hashlib.md5(pwd.encode()).hexdigest()
+        auth_service = AuthService()
+        return auth_service.check_password(self.password, pwd)
 
     def is_admin(self):
         if self.role == 'admin':

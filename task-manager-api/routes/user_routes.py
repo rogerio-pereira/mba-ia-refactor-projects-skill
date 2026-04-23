@@ -1,11 +1,14 @@
 from flask import Blueprint, request, jsonify
+from config import Config
 from database import db
+import re
+
 from models.user import User
 from models.task import Task
-from datetime import datetime
-import hashlib, json, re
+from services.auth_service import AuthService
 
 user_bp = Blueprint('users', __name__)
+auth_service = AuthService(Config.SECRET_KEY)
 
 @user_bp.route('/users', methods=['GET'])
 def get_users():
@@ -204,8 +207,12 @@ def login():
     if not user.active:
         return jsonify({'error': 'Usuário inativo'}), 403
 
+    if auth_service.needs_rehash(user.password):
+        user.password = auth_service.hash_password(password)
+        db.session.commit()
+
     return jsonify({
         'message': 'Login realizado com sucesso',
         'user': user.to_dict(),
-        'token': 'fake-jwt-token-' + str(user.id)
+        'token': auth_service.generate_token(user)
     }), 200

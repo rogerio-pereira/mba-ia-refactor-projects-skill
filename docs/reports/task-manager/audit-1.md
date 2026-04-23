@@ -45,13 +45,15 @@ MVC Target: Config
 Fixed by introducing `config.py`, `.env.example`, and `.gitignore` updates so Flask and SMTP settings are loaded from the environment.
 Validation: `python3 -m py_compile task-manager-api/app.py task-manager-api/config.py task-manager-api/services/notification_service.py` passed. Import smoke check is currently blocked in this environment because `flask_sqlalchemy` is not installed.
 
-### [CRITICAL] Authentication And User Serialization Expose Sensitive Data And Use Weak Credential Handling
+### [FIXED] [CRITICAL] Authentication And User Serialization Expose Sensitive Data And Use Weak Credential Handling
 File: `task-manager-api/models/user.py:16-32`, `task-manager-api/routes/user_routes.py:33-40`, `task-manager-api/routes/user_routes.py:85-86`, `task-manager-api/routes/user_routes.py:127-129`, `task-manager-api/routes/user_routes.py:185-210`  
 Category: Security | Reliability  
 Description: `User.to_dict()` returns the stored password hash, and that method is reused by `GET /users/<id>`, `POST /users`, `PUT /users/<id>`, and `POST /login`, so password hashes are returned to API clients. Passwords are hashed with unsalted MD5 in `set_password()` and `check_password()`, and login returns a predictable fake token (`fake-jwt-token-<id>`) instead of a signed credential.  
 Impact: The API leaks credential material in normal responses, stores passwords with an obsolete hash function, and implements authentication that can be trivially forged. This breaks basic security guarantees for any non-demo environment.  
 Recommendation: Remove password fields from all serializers, replace MD5 with a standard password hashing function such as `werkzeug.security` or `bcrypt`, and implement real signed authentication tokens or session handling behind a dedicated auth service.  
 MVC Target: Service  
+Fixed by removing password fields from `User.to_dict()`, introducing `services/auth_service.py` for secure hashing and signed token generation, and keeping legacy MD5 verification only as a login-time compatibility path with automatic rehash.
+Validation: `python3 -m py_compile task-manager-api/models/user.py task-manager-api/routes/user_routes.py task-manager-api/services/auth_service.py` passed. `PYTHONPATH=task-manager-api python3` smoke checks verified password hashing, legacy rehash detection, and signed token generation.
 
 ### [HIGH] Route Modules Act As Controllers, Services, Repositories, And Serializers At Once
 File: `task-manager-api/routes/task_routes.py:11-299`, `task-manager-api/routes/user_routes.py:10-211`, `task-manager-api/routes/report_routes.py:12-223`  
@@ -108,7 +110,7 @@ The dominant framework-level deprecation issue in the analyzed scope is repeated
 ## Proposed Phase 3 Refactoring Plan
 
 1. [FIXED] Extract an environment-aware config module and remove hardcoded Flask and SMTP secrets, debug defaults, and database settings from source files.
-2. Replace the current authentication flow with safe password hashing, password-free serializers, and signed auth token generation behind a dedicated auth service.
+2. [FIXED] Replace the current authentication flow with safe password hashing, password-free serializers, and signed auth token generation behind a dedicated auth service.
 3. Split each route module into thinner HTTP adapters plus controller/service layers for tasks, users, reports, and categories.
 4. Centralize validation and normalization for task, user, and category payloads using shared schemas or a consistent helper/service layer.
 5. Refactor list and report queries to avoid N+1 access patterns by using eager loading or aggregate SQL queries.
