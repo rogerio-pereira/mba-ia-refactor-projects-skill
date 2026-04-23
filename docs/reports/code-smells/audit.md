@@ -62,13 +62,14 @@ Recommendation: Remove arbitrary SQL execution from the HTTP surface. If admin d
 MVC Target: Controller  
 Validation: `python3 -m py_compile app.py config.py controllers.py models.py database.py` passed; route smoke check confirmed `/admin/query` is absent from `app.url_map`.  
 
-### [CRITICAL] SQL Injection Across Product, User, Order, And Search Queries
+### [FIXED] [CRITICAL] SQL Injection Across Product, User, Order, And Search Queries
 File: `code-smells-project/models.py:28-29`, `code-smells-project/models.py:47-60`, `code-smells-project/models.py:68-68`, `code-smells-project/models.py:92-92`, `code-smells-project/models.py:109-110`, `code-smells-project/models.py:126-129`, `code-smells-project/models.py:140-165`, `code-smells-project/models.py:174-174`, `code-smells-project/models.py:188-192`, `code-smells-project/models.py:220-224`, `code-smells-project/models.py:279-280`, `code-smells-project/models.py:289-299`  
 Category: Security  
 Description: The model layer repeatedly builds SQL with string concatenation using request-derived data such as names, emails, passwords, status, search terms, IDs, and order item values.  
 Impact: Malicious input can alter query structure, read unauthorized data, corrupt records, or destroy tables.  
 Recommendation: Replace every concatenated statement with parameterized queries and centralize query construction in repository-style functions.  
 MVC Target: Model  
+Validation: `python3 -m py_compile app.py config.py controllers.py models.py database.py` passed; model smoke test confirmed injected search/login payloads no longer alter query behavior.  
 
 ### [CRITICAL] Plaintext Password Storage And Authentication By Raw Query Match
 File: `code-smells-project/models.py:79-83`, `code-smells-project/models.py:99-99`, `code-smells-project/models.py:105-120`, `code-smells-project/models.py:122-129`  
@@ -182,7 +183,7 @@ No deprecated Flask API usage was identified in the inspected files. The main is
 
 1. [FIXED] Introduce an environment-aware configuration module and application factory to separate config, bootstrapping, and route registration.
 2. [FIXED] Remove or hard-disable `/admin/reset-db` and `/admin/query`, or replace them with explicitly scoped authenticated admin operations if the exercise requires them.
-3. Replace all concatenated SQL with parameterized queries and reorganize persistence code into cohesive repository/model modules.
+3. [FIXED] Replace all concatenated SQL with parameterized queries and reorganize persistence code into cohesive repository/model modules.
 4. Introduce request-scoped SQLite connection handling with deterministic teardown instead of a module-level global connection.
 5. Split `models.py` into product, user/auth, order, and reporting modules, and move workflow orchestration into services.
 6. Hash passwords, verify them safely during login, and remove password fields from all API serializers.
