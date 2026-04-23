@@ -104,13 +104,14 @@ Recommendation: Use request-scoped connection management, close connections on t
 MVC Target: Composition Root  
 Validation: `python3 -m py_compile app.py config.py controllers.py models.py database.py` passed; app-context smoke test confirmed per-context connection reuse and teardown wiring.  
 
-### [HIGH] God Model Module Concentrates Multiple Domains And Responsibilities
+### [FIXED] [HIGH] God Model Module Concentrates Multiple Domains And Responsibilities
 File: `code-smells-project/models.py:1-314`  
 Category: Architecture | Maintainability  
 Description: `models.py` contains product persistence, user persistence, authentication, order creation, stock mutation, sales reporting, serialization, and query assembly in one module.  
 Impact: The module is difficult to test, risky to modify, and violates clear ownership boundaries between domains and layers.  
 Recommendation: Split the module into cohesive repositories/services by domain, separating persistence concerns from business workflow and reporting.  
 MVC Target: Model  
+Validation: `python3 -m py_compile app.py config.py controllers.py database.py models.py product_repository.py user_repository.py order_repository.py report_repository.py auth_service.py order_service.py` passed; app-context smoke test confirmed the compatibility facade still serves product and order reads.  
 
 ### [HIGH] Order Workflow And Notification Side Effects Are Embedded In Controller Code
 File: `code-smells-project/controllers.py:188-220`  
@@ -186,7 +187,7 @@ No deprecated Flask API usage was identified in the inspected files. The main is
 2. [FIXED] Remove or hard-disable `/admin/reset-db` and `/admin/query`, or replace them with explicitly scoped authenticated admin operations if the exercise requires them.
 3. [FIXED] Replace all concatenated SQL with parameterized queries and reorganize persistence code into cohesive repository/model modules.
 4. [FIXED] Introduce request-scoped SQLite connection handling with deterministic teardown instead of a module-level global connection.
-5. Split `models.py` into product, user/auth, order, and reporting modules, and move workflow orchestration into services.
+5. [FIXED] Split `models.py` into product, user/auth, order, and reporting modules, and move workflow orchestration into services.
 6. Hash passwords, verify them safely during login, and remove password fields from all API serializers.
 7. Extract request validation and add centralized error handling for consistent HTTP error responses.
 8. Rewrite order retrieval paths to avoid N+1 queries and share the retrieval logic between list variants.
