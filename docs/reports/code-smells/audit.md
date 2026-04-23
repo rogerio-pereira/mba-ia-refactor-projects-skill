@@ -215,5 +215,3 @@ No deprecated Flask API usage was identified in the inspected files. The main is
 - PASS Original endpoints respond correctly via `python3` smoke tests using `app.test_client()` for `GET /produtos`, `GET /usuarios`, `GET /health`, `POST /usuarios`, `POST /login`, `POST /pedidos`, and `GET /relatorios/vendas`
 - PASS No project lint or automated test suite exists; import and route smoke checks were executed instead
 - PASS Remaining high-risk anti-patterns reviewed; all audit findings are marked as fixed in this report
-
-Phase 2 complete. Proceed with MVC refactoring (Phase 3)? [y/n]
