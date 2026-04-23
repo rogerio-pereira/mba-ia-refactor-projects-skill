@@ -71,21 +71,23 @@ Recommendation: Replace every concatenated statement with parameterized queries 
 MVC Target: Model  
 Validation: `python3 -m py_compile app.py config.py controllers.py models.py database.py` passed; model smoke test confirmed injected search/login payloads no longer alter query behavior.  
 
-### [CRITICAL] Plaintext Password Storage And Authentication By Raw Query Match
+### [FIXED] [CRITICAL] Plaintext Password Storage And Authentication By Raw Query Match
 File: `code-smells-project/models.py:79-83`, `code-smells-project/models.py:99-99`, `code-smells-project/models.py:105-120`, `code-smells-project/models.py:122-129`  
 Category: Security  
 Description: Passwords are inserted, stored, and compared as plaintext. Authentication checks credentials with a raw SQL lookup rather than using password hashing and verification.  
 Impact: Any database leak immediately exposes reusable credentials, and login security is far below minimum acceptable practice.  
 Recommendation: Hash passwords with a current password hashing algorithm, verify them through a safe API, and never return password data from application reads.  
 MVC Target: Model  
+Validation: `python3 -m py_compile app.py config.py controllers.py database.py models.py product_repository.py user_repository.py order_repository.py report_repository.py auth_service.py order_service.py` passed; app-context smoke test confirmed seeded and legacy user passwords are hashed and login still succeeds.  
 
-### [HIGH] User Read APIs Leak Password Fields
+### [FIXED] [HIGH] User Read APIs Leak Password Fields
 File: `code-smells-project/models.py:72-87`, `code-smells-project/models.py:89-103`  
 Category: Security  
 Description: User list and detail serializers include the `senha` field in API responses.  
 Impact: Standard read endpoints become credential disclosure paths, which is especially severe because passwords are stored in plaintext.  
 Recommendation: Introduce explicit safe serializers for user responses and keep password material isolated to authentication internals.  
 MVC Target: Model  
+Validation: `python3 -m py_compile app.py config.py controllers.py database.py models.py product_repository.py user_repository.py order_repository.py report_repository.py auth_service.py order_service.py` passed; user serialization smoke test confirmed `senha` is absent from list responses.  
 
 ### [HIGH] Health Endpoint Leaks Secret And Deployment Details
 File: `code-smells-project/controllers.py:264-290`  
@@ -188,7 +190,7 @@ No deprecated Flask API usage was identified in the inspected files. The main is
 3. [FIXED] Replace all concatenated SQL with parameterized queries and reorganize persistence code into cohesive repository/model modules.
 4. [FIXED] Introduce request-scoped SQLite connection handling with deterministic teardown instead of a module-level global connection.
 5. [FIXED] Split `models.py` into product, user/auth, order, and reporting modules, and move workflow orchestration into services.
-6. Hash passwords, verify them safely during login, and remove password fields from all API serializers.
+6. [FIXED] Hash passwords, verify them safely during login, and remove password fields from all API serializers.
 7. Extract request validation and add centralized error handling for consistent HTTP error responses.
 8. Rewrite order retrieval paths to avoid N+1 queries and share the retrieval logic between list variants.
 9. Move schema creation and seed loading out of `get_db()` into an explicit initialization path.

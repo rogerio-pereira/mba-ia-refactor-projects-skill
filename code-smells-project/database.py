@@ -1,5 +1,6 @@
 import sqlite3
 from flask import current_app, g
+from werkzeug.security import generate_password_hash
 
 
 def _connect():
@@ -7,6 +8,29 @@ def _connect():
     connection = sqlite3.connect(db_path)
     connection.row_factory = sqlite3.Row
     return connection
+
+
+def _is_password_hash(value):
+    return value.startswith("scrypt:") or value.startswith("pbkdf2:")
+
+
+def _migrate_legacy_passwords(db_connection):
+    cursor = db_connection.cursor()
+    cursor.execute("SELECT id, senha FROM usuarios")
+    usuarios = cursor.fetchall()
+    atualizou = False
+
+    for usuario in usuarios:
+        if _is_password_hash(usuario["senha"]):
+            continue
+        cursor.execute(
+            "UPDATE usuarios SET senha = ? WHERE id = ?",
+            (generate_password_hash(usuario["senha"]), usuario["id"]),
+        )
+        atualizou = True
+
+    if atualizou:
+        db_connection.commit()
 
 def get_db():
     if "db_connection" not in g:
@@ -75,15 +99,17 @@ def get_db():
             )
 
             usuarios = [
-                ("Admin", "admin@loja.com", "admin123", "admin"),
-                ("João Silva", "joao@email.com", "123456", "cliente"),
-                ("Maria Santos", "maria@email.com", "senha123", "cliente"),
+                ("Admin", "admin@loja.com", generate_password_hash("admin123"), "admin"),
+                ("João Silva", "joao@email.com", generate_password_hash("123456"), "cliente"),
+                ("Maria Santos", "maria@email.com", generate_password_hash("senha123"), "cliente"),
             ]
             cursor.executemany(
                 "INSERT INTO usuarios (nome, email, senha, tipo) VALUES (?, ?, ?, ?)",
                 usuarios
             )
             g.db_connection.commit()
+
+        _migrate_legacy_passwords(g.db_connection)
 
     return g.db_connection
 

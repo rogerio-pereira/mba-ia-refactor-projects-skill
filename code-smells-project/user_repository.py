@@ -1,6 +1,16 @@
 from database import get_db
 
 
+def _serialize_usuario(row):
+    return {
+        "id": row["id"],
+        "nome": row["nome"],
+        "email": row["email"],
+        "tipo": row["tipo"],
+        "criado_em": row["criado_em"]
+    }
+
+
 def get_todos_usuarios():
     db = get_db()
     cursor = db.cursor()
@@ -8,14 +18,7 @@ def get_todos_usuarios():
     rows = cursor.fetchall()
     result = []
     for row in rows:
-        result.append({
-            "id": row["id"],
-            "nome": row["nome"],
-            "email": row["email"],
-            "senha": row["senha"],
-            "tipo": row["tipo"],
-            "criado_em": row["criado_em"]
-        })
+        result.append(_serialize_usuario(row))
     return result
 
 
@@ -25,14 +28,7 @@ def get_usuario_por_id(usuario_id):
     cursor.execute("SELECT * FROM usuarios WHERE id = ?", (usuario_id,))
     row = cursor.fetchone()
     if row:
-        return {
-            "id": row["id"],
-            "nome": row["nome"],
-            "email": row["email"],
-            "senha": row["senha"],
-            "tipo": row["tipo"],
-            "criado_em": row["criado_em"]
-        }
+        return _serialize_usuario(row)
     return None
 
 
@@ -62,3 +58,13 @@ def criar_usuario(nome, email, senha, tipo="cliente"):
     )
     db.commit()
     return cursor.lastrowid
+
+
+def atualizar_senha(usuario_id, senha_hash):
+    db = get_db()
+    cursor = db.cursor()
+    cursor.execute(
+        "UPDATE usuarios SET senha = ? WHERE id = ?",
+        (senha_hash, usuario_id),
+    )
+    db.commit()

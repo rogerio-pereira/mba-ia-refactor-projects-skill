@@ -14,7 +14,7 @@ buscar_produtos = product_repository.buscar_produtos
 
 get_todos_usuarios = user_repository.get_todos_usuarios
 get_usuario_por_id = user_repository.get_usuario_por_id
-criar_usuario = user_repository.criar_usuario
+criar_usuario = auth_service.criar_usuario
 login_usuario = auth_service.login_usuario
 
 criar_pedido = order_service.criar_pedido
