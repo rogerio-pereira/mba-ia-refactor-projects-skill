@@ -3,6 +3,7 @@ from flask_cors import CORS
 import controllers
 from database import close_db, get_db
 from config import Config
+from errors import AppError
 
 def register_routes(app):
     app.add_url_rule("/produtos", "listar_produtos", controllers.listar_produtos, methods=["GET"])
@@ -38,6 +39,15 @@ def create_app():
 
     app.teardown_appcontext(close_db)
     register_routes(app)
+
+    @app.errorhandler(AppError)
+    def handle_app_error(error):
+        return jsonify({"erro": error.message, "sucesso": False}), error.status_code
+
+    @app.errorhandler(Exception)
+    def handle_unexpected_error(error):
+        app.logger.exception("Unhandled error", exc_info=error)
+        return jsonify({"erro": "Erro interno do servidor", "sucesso": False}), 500
 
     @app.route("/")
     def index():

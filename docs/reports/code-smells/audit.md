@@ -89,13 +89,14 @@ Recommendation: Introduce explicit safe serializers for user responses and keep 
 MVC Target: Model  
 Validation: `python3 -m py_compile app.py config.py controllers.py database.py models.py product_repository.py user_repository.py order_repository.py report_repository.py auth_service.py order_service.py` passed; user serialization smoke test confirmed `senha` is absent from list responses.  
 
-### [HIGH] Health Endpoint Leaks Secret And Deployment Details
+### [FIXED] [HIGH] Health Endpoint Leaks Secret And Deployment Details
 File: `code-smells-project/controllers.py:264-290`  
 Category: Security  
 Description: The health handler returns the database path, debug flag, hardcoded environment label, and the application secret key.  
 Impact: Operational metadata and secrets are disclosed to any caller through an endpoint that is typically assumed to be low risk.  
 Recommendation: Restrict health responses to non-sensitive liveness data and move diagnostics behind authenticated operational tooling.  
 MVC Target: Controller  
+Validation: `python3 -m py_compile app.py config.py controllers.py database.py models.py product_repository.py user_repository.py order_repository.py report_repository.py auth_service.py order_service.py validators.py errors.py constants.py` passed; `app.test_client()` smoke test confirmed `/health` returns only non-sensitive fields.  
 
 ### [FIXED] [HIGH] Global Mutable SQLite Connection Shared Across Requests
 File: `code-smells-project/database.py:4-11`  
@@ -147,21 +148,23 @@ Impact: Partial writes or concurrent requests can leave orders and stock in inco
 Recommendation: Wrap the workflow in an explicit transaction, fetch product state once, validate atomically, and update stock with guarded writes.  
 MVC Target: Service  
 
-### [MEDIUM] Request Validation Is Repeated And Inconsistent Across Controllers
+### [FIXED] [MEDIUM] Request Validation Is Repeated And Inconsistent Across Controllers
 File: `code-smells-project/controllers.py:24-62`, `code-smells-project/controllers.py:64-96`, `code-smells-project/controllers.py:146-165`, `code-smells-project/controllers.py:167-186`, `code-smells-project/controllers.py:188-220`, `code-smells-project/controllers.py:237-255`  
 Category: Maintainability  
 Description: Validation rules for products, users, login, orders, and status updates are handwritten inline in route handlers, with different shapes and incomplete coverage.  
 Impact: Validation logic is hard to reuse, easy to drift, and expensive to test consistently across endpoints.  
 Recommendation: Extract validators or schema objects for request payloads and map validation failures to a standard error response format.  
 MVC Target: Controller  
+Validation: `python3 -m py_compile app.py config.py controllers.py database.py models.py product_repository.py user_repository.py order_repository.py report_repository.py auth_service.py order_service.py validators.py errors.py constants.py` passed; `app.test_client()` smoke test confirmed invalid `/login` payloads now use the shared validation path.  
 
-### [MEDIUM] Error Handling Repeats Broad `except Exception` Blocks And Returns Raw Errors To Clients
+### [FIXED] [MEDIUM] Error Handling Repeats Broad `except Exception` Blocks And Returns Raw Errors To Clients
 File: `code-smells-project/controllers.py:5-292`, `code-smells-project/app.py:77-78`  
 Category: Reliability  
 Description: Handlers broadly catch `Exception`, expose `str(e)` in responses, and mix response formatting with console `print` statements.  
 Impact: Internal details leak to clients, observability is inconsistent, and the codebase lacks a central policy for translating domain or infrastructure failures into HTTP responses.  
 Recommendation: Add centralized error handling with safe public messages and structured server-side logging.  
 MVC Target: Middleware  
+Validation: `python3 -m py_compile app.py config.py controllers.py database.py models.py product_repository.py user_repository.py order_repository.py report_repository.py auth_service.py order_service.py validators.py errors.py constants.py` passed; `app.test_client()` smoke test confirmed validation failures are handled centrally with standard JSON responses.  
 
 ### [LOW] Database Bootstrap And Seed Data Are Hidden Inside Connection Access
 File: `code-smells-project/database.py:7-84`  
@@ -171,13 +174,14 @@ Impact: A simple read path triggers schema/bootstrap behavior, which makes start
 Recommendation: Move schema creation and seeding into explicit initialization commands or a dedicated startup routine.  
 MVC Target: Composition Root  
 
-### [LOW] Domain Constants And Environment Labels Are Hardcoded In Multiple Layers
+### [FIXED] [LOW] Domain Constants And Environment Labels Are Hardcoded In Multiple Layers
 File: `code-smells-project/controllers.py:52-54`, `code-smells-project/controllers.py:242-243`, `code-smells-project/controllers.py:285-289`, `code-smells-project/database.py:5`  
 Category: Maintainability  
 Description: Product categories, order status values, environment metadata, debug flags, secret labels, and database path literals are embedded directly in handlers and modules.  
 Impact: Domain rules and operational settings are difficult to audit, reuse, or change safely.  
 Recommendation: Centralize constants and runtime settings in configuration and domain modules, and reuse them across controllers and services.  
 MVC Target: Helper  
+Validation: `python3 -m py_compile app.py config.py controllers.py database.py models.py product_repository.py user_repository.py order_repository.py report_repository.py auth_service.py order_service.py validators.py errors.py constants.py` passed.  
 
 ## Deprecated API Detection
 
@@ -191,7 +195,7 @@ No deprecated Flask API usage was identified in the inspected files. The main is
 4. [FIXED] Introduce request-scoped SQLite connection handling with deterministic teardown instead of a module-level global connection.
 5. [FIXED] Split `models.py` into product, user/auth, order, and reporting modules, and move workflow orchestration into services.
 6. [FIXED] Hash passwords, verify them safely during login, and remove password fields from all API serializers.
-7. Extract request validation and add centralized error handling for consistent HTTP error responses.
+7. [FIXED] Extract request validation and add centralized error handling for consistent HTTP error responses.
 8. Rewrite order retrieval paths to avoid N+1 queries and share the retrieval logic between list variants.
 9. Move schema creation and seed loading out of `get_db()` into an explicit initialization path.
 10. Re-validate all existing routes to preserve endpoint compatibility while improving separation of responsibilities.
