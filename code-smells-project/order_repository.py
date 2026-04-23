@@ -55,5 +55,8 @@ def atualizar_status_pedido(pedido_id, novo_status):
         "UPDATE pedidos SET status = ? WHERE id = ?",
         (novo_status, pedido_id),
     )
+    if cursor.rowcount != 1:
+        return False
+
     db.commit()
     return True

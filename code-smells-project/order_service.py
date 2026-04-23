@@ -1,4 +1,5 @@
 from database import get_db
+from errors import AppError
 import notification_service
 import order_repository
 import product_repository
@@ -84,5 +85,7 @@ def get_todos_pedidos():
 
 def atualizar_status_pedido(pedido_id, novo_status):
     resultado = order_repository.atualizar_status_pedido(pedido_id, novo_status)
+    if not resultado:
+        raise AppError("Pedido não encontrado", 404)
     notification_service.notificar_status_pedido(pedido_id, novo_status)
     return resultado

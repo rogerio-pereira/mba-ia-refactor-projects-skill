@@ -53,13 +53,14 @@ Recommendation: Mover a verificação de disponibilidade para uma atualização 
 MVC Target: Service  
 Validation: `python3 -m py_compile code-smells-project/*.py` passed; `app.test_client()` smoke test confirmed a second order fails after the first one exhausts the same stock.
 
-### [HIGH] Atualização de status aceita pedidos inexistentes e ainda dispara notificação
+### [FIXED] [HIGH] Atualização de status aceita pedidos inexistentes e ainda dispara notificação
 File: `code-smells-project/order_repository.py:51-59`, `code-smells-project/order_service.py:83-85`, `code-smells-project/controllers.py:106-110`  
 Category: Reliability  
 Description: `order_repository.atualizar_status_pedido()` sempre retorna `True`, sem checar `rowcount`. Em seguida, `order_service.atualizar_status_pedido()` dispara notificação independentemente de o pedido existir, e o controller devolve sucesso para o cliente.  
 Impact: A API confirma operações que não ocorreram e pode emitir notificações falsas, tornando o estado externo do sistema inconsistente com o estado persistido.  
 Recommendation: Verificar se o `UPDATE` afetou uma linha, lançar erro 404 quando o pedido não existir e só notificar após confirmação de persistência válida.  
 MVC Target: Service  
+Validation: `python3 -m py_compile code-smells-project/*.py` passed; `PUT /pedidos/999/status` now returns `404` and does not report success.
 
 ### [HIGH] Schema permissivo demais compromete integridade de dados
 File: `code-smells-project/database.py:38-77`, `code-smells-project/validators.py:51-85`, `code-smells-project/auth_service.py:14-34`  
@@ -117,7 +118,7 @@ Nenhum uso claramente depreciado de Flask 3.1.1 foi identificado nos arquivos an
 
 1. [FIXED] Remover `.env` do controle de versão, tratar `SECRET_KEY` como segredo externo e endurecer a validação de configuração por ambiente.
 2. [FIXED] Reescrever a criação de pedidos para usar reserva/decremento de estoque atômicos e falhar corretamente em conflitos de concorrência.
-3. Corrigir o fluxo de atualização de status para validar existência do pedido antes de persistir e notificar.
+3. [FIXED] Corrigir o fluxo de atualização de status para validar existência do pedido antes de persistir e notificar.
 4. Reforçar o schema SQLite com constraints reais (`NOT NULL`, `UNIQUE`, `FOREIGN KEY`) e alinhar validadores ao novo contrato.
 5. Extrair consultas operacionais de `health_check()` para uma camada própria de serviço/repositório.
 6. Separar a lógica de desconto do `report_repository` e mantê-la em um serviço de domínio.
