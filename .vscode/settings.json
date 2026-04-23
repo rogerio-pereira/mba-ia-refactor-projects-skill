@@ -1,5 +1,6 @@
 {
     "conventionalCommits.scopes": [
-        "AI"
+        "AI",
+        "project code-smells"
     ]
 }
