@@ -117,12 +117,12 @@ Use this finding format:
 
 ```markdown
 ### [SEVERITY] Finding Title
-File: path/to/file.ext:start-end
-Category: Architecture | Security | Reliability | Performance | Maintainability
-Description: What is wrong, grounded in the code.
-Impact: Why this matters.
-Recommendation: What should change.
-MVC Target: Model | View/Route | Controller | Config | Middleware | Composition Root | Service | Helper
+File: path/to/file.ext:start-end  
+Category: Architecture | Security | Reliability | Performance | Maintainability  
+Description: What is wrong, grounded in the code.  
+Impact: Why this matters.  
+Recommendation: What should change.  
+MVC Target: Model | View/Route | Controller | Config | Middleware | Composition Root | Service | Helper  
 ```
 
 After the report, stop and ask this exact plain sentence:
