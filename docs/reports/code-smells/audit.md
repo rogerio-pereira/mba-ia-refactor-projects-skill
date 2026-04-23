@@ -124,21 +124,23 @@ Impact: HTTP handling, business orchestration, and infrastructure concerns are t
 Recommendation: Move order creation and notification orchestration into a dedicated service layer, leaving the controller responsible only for HTTP mapping.  
 MVC Target: Service  
 
-### [MEDIUM] N+1 Query Pattern In User Order Listing
+### [FIXED] [MEDIUM] N+1 Query Pattern In User Order Listing
 File: `code-smells-project/models.py:171-201`  
 Category: Performance  
 Description: `get_pedidos_usuario` loads orders, then queries items per order, then queries product names per item with extra cursors inside loops.  
 Impact: Database round trips scale poorly with the number of orders and items, degrading latency and throughput.  
 Recommendation: Fetch orders, items, and product data through joins or batched queries and assemble the response in memory.  
 MVC Target: Model  
+Validation: `python3 -m py_compile app.py config.py controllers.py database.py models.py product_repository.py user_repository.py order_repository.py report_repository.py auth_service.py order_service.py validators.py errors.py constants.py` passed; app-context smoke test confirmed user-specific order listings resolve through the batched order service.  
 
-### [MEDIUM] Same N+1 Logic Is Duplicated In All-Orders Listing
+### [FIXED] [MEDIUM] Same N+1 Logic Is Duplicated In All-Orders Listing
 File: `code-smells-project/models.py:203-233`  
 Category: Performance | Maintainability  
 Description: `get_todos_pedidos` repeats the same per-order and per-item querying strategy used in the user-specific listing.  
 Impact: The performance issue is duplicated and any future fix must be applied in multiple places.  
 Recommendation: Extract a shared order retrieval routine with optional filters and optimized data loading.  
 MVC Target: Model  
+Validation: `python3 -m py_compile app.py config.py controllers.py database.py models.py product_repository.py user_repository.py order_repository.py report_repository.py auth_service.py order_service.py validators.py errors.py constants.py` passed; app-context smoke test confirmed all-orders listings reuse the same batched order service path.  
 
 ### [MEDIUM] Order Creation Lacks Transaction Boundaries And Re-Reads Product State
 File: `code-smells-project/models.py:133-169`  
@@ -196,7 +198,7 @@ No deprecated Flask API usage was identified in the inspected files. The main is
 5. [FIXED] Split `models.py` into product, user/auth, order, and reporting modules, and move workflow orchestration into services.
 6. [FIXED] Hash passwords, verify them safely during login, and remove password fields from all API serializers.
 7. [FIXED] Extract request validation and add centralized error handling for consistent HTTP error responses.
-8. Rewrite order retrieval paths to avoid N+1 queries and share the retrieval logic between list variants.
+8. [FIXED] Rewrite order retrieval paths to avoid N+1 queries and share the retrieval logic between list variants.
 9. Move schema creation and seed loading out of `get_db()` into an explicit initialization path.
 10. Re-validate all existing routes to preserve endpoint compatibility while improving separation of responsibilities.
 

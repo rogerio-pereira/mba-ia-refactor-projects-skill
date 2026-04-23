@@ -36,13 +36,13 @@ def listar_pedidos(rows):
     pedido_ids = [row["id"] for row in rows]
     itens = order_repository.get_itens_por_pedido_ids(pedido_ids)
     itens_por_pedido = {}
-    produto_ids = []
+    produto_ids = set()
 
     for item in itens:
         itens_por_pedido.setdefault(item["pedido_id"], []).append(item)
-        produto_ids.append(item["produto_id"])
+        produto_ids.add(item["produto_id"])
 
-    produtos = product_repository.get_produtos_por_ids(produto_ids)
+    produtos = product_repository.get_produtos_por_ids(list(produto_ids))
 
     for row in rows:
         pedido = {
