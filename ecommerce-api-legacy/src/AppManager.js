@@ -1,5 +1,5 @@
 const sqlite3 = require('sqlite3').verbose();
-const { config, logAndCache, badCrypto, totalRevenue } = require('./utils');
+const { logAndCache } = require('./utils');
 
 class AppManager {
     constructor() {
@@ -42,7 +42,7 @@ class AppManager {
 
                     let processPaymentAndEnroll = (userId) => {
 
-                        console.log(`Processando cartão ${cc} na chave ${config.paymentGatewayKey}`);
+                        console.log(`Processing payment for course ${cid}`);
                         let status = cc.startsWith("4") ? "PAID" : "DENIED";
 
                         if (status === "DENIED") return res.status(400).send("Pagamento recusado");
@@ -65,8 +65,7 @@ class AppManager {
 
                     if (!user) {
 
-                        let hash = badCrypto(p || "123456");
-                        this.db.run("INSERT INTO users (name, email, pass) VALUES (?, ?, ?)", [u, e, hash], function(err) {
+                        this.db.run("INSERT INTO users (name, email, pass) VALUES (?, ?, ?)", [u, e, p], function(err) {
                             if (err) return res.status(500).send("Erro ao criar usuário");
                             processPaymentAndEnroll(this.lastID);
                         });

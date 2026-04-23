@@ -1,6 +1,6 @@
 const express = require('express');
 const AppManager = require('./AppManager');
-const { config } = require('./utils');
+const { config } = require('./config');
 
 const app = express();
 app.use(express.json());
