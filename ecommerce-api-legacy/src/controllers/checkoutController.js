@@ -1,10 +1,5 @@
 const { logAndCache } = require('../utils');
-const { findActiveCourseById } = require('../repositories/courseRepository');
-const { findUserIdByEmail, createUser } = require('../repositories/userRepository');
-const { createEnrollment } = require('../repositories/enrollmentRepository');
-const { createPayment } = require('../repositories/paymentRepository');
-const { createAuditLog } = require('../repositories/auditLogRepository');
-const { hashPassword } = require('../services/passwordService');
+const { checkout: runCheckout } = require('../services/checkoutService');
 
 function createCheckoutController({ db }) {
     return async function checkout(req, res) {
@@ -18,42 +13,30 @@ function createCheckoutController({ db }) {
             return res.status(400).send('Bad Request');
         }
 
+        if (!password) {
+            return res.status(400).send('Password is required');
+        }
+
+        console.log(`Processing payment for course ${courseId}`);
+
         try {
-            const course = await findActiveCourseById(db, courseId);
+            const result = await runCheckout({
+                db,
+                payload: {
+                    userName,
+                    email,
+                    password,
+                    courseId,
+                    cardNumber,
+                },
+                cacheService: {
+                    store: logAndCache,
+                },
+            });
 
-            if (!course) {
-                return res.status(404).send('Curso não encontrado');
-            }
-
-            let user = await findUserIdByEmail(db, email);
-
-            if (!user) {
-                if (!password) {
-                    return res.status(400).send('Password is required');
-                }
-
-                const createdUser = await createUser(db, userName, email, hashPassword(password));
-                user = { id: createdUser.lastID };
-            }
-
-            console.log(`Processing payment for course ${courseId}`);
-
-            const status = cardNumber.startsWith('4') ? 'PAID' : 'DENIED';
-
-            if (status === 'DENIED') {
-                return res.status(400).send('Pagamento recusado');
-            }
-
-            const enrollment = await createEnrollment(db, user.id, courseId);
-
-            await createPayment(db, enrollment.lastID, course.price, status);
-            await createAuditLog(db, `Checkout curso ${courseId} por ${user.id}`);
-
-            logAndCache(`last_checkout_${user.id}`, course.title);
-
-            return res.status(200).json({ msg: 'Sucesso', enrollment_id: enrollment.lastID });
+            return res.status(200).json(result);
         } catch (error) {
-            return res.status(500).send('Erro DB');
+            return res.status(error.statusCode || 500).send(error.statusCode ? error.message : 'Erro DB');
         }
     };
 }

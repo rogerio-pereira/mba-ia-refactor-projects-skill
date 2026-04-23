@@ -62,13 +62,14 @@ Recommendation: Require an explicit password for user creation, reject missing c
 MVC Target: Service  
 Validation: checkout smoke test now returns `400` when `pwd` is omitted for a new user, and a database seed check confirmed the stored password is no longer `123`.  
 
-### [HIGH] Checkout Workflow Lacks Transaction Boundaries And Can Leave Partial State
+### [FIXED] [HIGH] Checkout Workflow Lacks Transaction Boundaries And Can Leave Partial State
 File: `ecommerce-api-legacy/src/AppManager.js:37-77`  
 Category: Reliability  
 Description: The checkout path performs multiple dependent writes across `users`, `enrollments`, `payments`, and `audit_logs` through nested callbacks without an explicit transaction or rollback strategy. The audit log insert error is ignored entirely before sending success.  
 Impact: Failures in the middle of the workflow can leave orphaned or inconsistent rows, while clients still receive success responses in some error paths.  
 Recommendation: Wrap the entire checkout flow in an explicit transaction, fail atomically on any persistence error, and centralize workflow orchestration in a service layer.  
 MVC Target: Service  
+Validation: checkout smoke test passed, and a forced failure after dropping `payments` confirmed the transaction rolls back without leaving created users or enrollments behind.  
 
 ### [HIGH] Administrative Financial Report Is Unauthenticated And Implements N+1 Query Patterns
 File: `ecommerce-api-legacy/src/AppManager.js:80-129`, `ecommerce-api-legacy/api.http:27-28`  
@@ -128,7 +129,7 @@ No clearly deprecated Express 4.18.2 APIs were identified in the analyzed files.
 1. [FIXED] Extract environment-aware configuration and remove all hardcoded secrets, seeded real credentials, and sensitive logs.
 2. [FIXED] Split `AppManager` into composition root, routes/controllers, services, repositories/models, and middleware following MVC boundaries.
 3. [FIXED] Replace `badCrypto` with a real password hashing strategy and require explicit validated credentials in checkout.
-4. Refactor checkout into a transactional service that atomically creates users, enrollments, payments, and audit logs.
+4. [FIXED] Refactor checkout into a transactional service that atomically creates users, enrollments, payments, and audit logs.
 5. Protect administrative endpoints with authentication/authorization and redesign the financial report query to avoid N+1 access patterns.
 6. Enforce referential integrity in the schema and redesign destructive user deletion to preserve consistent domain state.
 7. Add centralized request validation and standardized error handling for all endpoints.

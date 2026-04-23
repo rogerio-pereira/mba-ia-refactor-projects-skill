@@ -4,11 +4,11 @@ const { createDatabase } = require('./db/connection');
 const { initDb } = require('./db/initDb');
 const { registerRoutes } = require('./routes');
 
-function createApp() {
+async function createApp() {
     const app = express();
     const db = createDatabase();
 
-    initDb(db);
+    await initDb(db);
 
     app.use(express.json());
 

@@ -43,4 +43,17 @@ function all(db, sql, params = []) {
     });
 }
 
-module.exports = { createDatabase, run, get, all };
+function exec(db, sql) {
+    return new Promise((resolve, reject) => {
+        db.exec(sql, (err) => {
+            if (err) {
+                reject(err);
+                return;
+            }
+
+            resolve();
+        });
+    });
+}
+
+module.exports = { createDatabase, run, get, all, exec };
