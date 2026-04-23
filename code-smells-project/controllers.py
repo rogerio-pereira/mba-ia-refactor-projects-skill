@@ -4,7 +4,7 @@ import auth_service
 import health_service
 import order_service
 import product_repository
-import report_repository
+import report_service
 import user_repository
 from validators import (
     parse_busca_params,
@@ -110,7 +110,7 @@ def atualizar_status_pedido(pedido_id):
     return jsonify({"sucesso": True, "mensagem": "Status atualizado"}), 200
 
 def relatorio_vendas():
-    relatorio = report_repository.relatorio_vendas()
+    relatorio = report_service.relatorio_vendas()
     return jsonify({"dados": relatorio, "sucesso": True}), 200
 
 def health_check():

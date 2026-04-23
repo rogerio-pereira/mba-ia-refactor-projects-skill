@@ -1,7 +1,7 @@
 from database import get_db
 
 
-def relatorio_vendas():
+def get_sales_summary():
     db = get_db()
     cursor = db.cursor()
 
@@ -22,21 +22,10 @@ def relatorio_vendas():
     cursor.execute("SELECT COUNT(*) FROM pedidos WHERE status = 'cancelado'")
     cancelados = cursor.fetchone()[0]
 
-    desconto = 0
-    if faturamento > 10000:
-        desconto = faturamento * 0.1
-    elif faturamento > 5000:
-        desconto = faturamento * 0.05
-    elif faturamento > 1000:
-        desconto = faturamento * 0.02
-
     return {
         "total_pedidos": total_pedidos,
-        "faturamento_bruto": round(faturamento, 2),
-        "desconto_aplicavel": round(desconto, 2),
-        "faturamento_liquido": round(faturamento - desconto, 2),
+        "faturamento_bruto": faturamento,
         "pedidos_pendentes": pendentes,
         "pedidos_aprovados": aprovados,
         "pedidos_cancelados": cancelados,
-        "ticket_medio": round(faturamento / total_pedidos, 2) if total_pedidos > 0 else 0
     }

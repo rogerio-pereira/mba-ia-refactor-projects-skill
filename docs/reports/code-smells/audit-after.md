@@ -80,13 +80,14 @@ Recommendation: Extrair um `health_service` ou `system_repository` para encapsul
 MVC Target: Controller  
 Validation: `python3 -m py_compile code-smells-project/*.py` passed; `GET /health` still returns `200` with the expected count payload after the extraction.
 
-### [MEDIUM] Regra de desconto de faturamento está misturada com acesso a dados
+### [FIXED] [MEDIUM] Regra de desconto de faturamento está misturada com acesso a dados
 File: `code-smells-project/report_repository.py:8-41`  
 Category: Architecture | Maintainability  
 Description: O repositório consulta o banco e, na mesma função, aplica regras de negócio de desconto por faixa de faturamento. Essa regra não é de persistência; ela é lógica de domínio/aplicação.  
 Impact: A camada de acesso a dados fica responsável por política comercial, o que dificulta testes unitários, reutilização da regra em outros canais e futura troca de persistência.  
 Recommendation: Limitar o repositório à coleta de dados agregados e mover o cálculo de desconto/ticket para um serviço de relatório.  
 MVC Target: Service  
+Validation: `python3 -m py_compile code-smells-project/*.py` passed; `GET /relatorios/vendas` still returns the same response fields after moving discount logic to `report_service.py`.
 
 ### [MEDIUM] Artefatos legados e código morto obscurecem a arquitetura real
 File: `code-smells-project/models.py:1-25`, `code-smells-project/user_repository.py:42-49`, `code-smells-project/controllers.py:9-17`, `code-smells-project/validators.py:11-12`  
@@ -123,7 +124,7 @@ Nenhum uso claramente depreciado de Flask 3.1.1 foi identificado nos arquivos an
 3. [FIXED] Corrigir o fluxo de atualização de status para validar existência do pedido antes de persistir e notificar.
 4. [FIXED] Reforçar o schema SQLite com constraints reais (`NOT NULL`, `UNIQUE`, `FOREIGN KEY`) e alinhar validadores ao novo contrato.
 5. [FIXED] Extrair consultas operacionais de `health_check()` para uma camada própria de serviço/repositório.
-6. Separar a lógica de desconto do `report_repository` e mantê-la em um serviço de domínio.
+6. [FIXED] Separar a lógica de desconto do `report_repository` e mantê-la em um serviço de domínio.
 7. Eliminar código morto e camadas de compatibilidade que não participam do fluxo ativo.
 8. Substituir `print` por logging estruturado e consolidar serializers repetidos.
 
