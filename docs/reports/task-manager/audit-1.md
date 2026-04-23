@@ -55,13 +55,15 @@ MVC Target: Service
 Fixed by removing password fields from `User.to_dict()`, introducing `services/auth_service.py` for secure hashing and signed token generation, and keeping legacy MD5 verification only as a login-time compatibility path with automatic rehash.
 Validation: `python3 -m py_compile task-manager-api/models/user.py task-manager-api/routes/user_routes.py task-manager-api/services/auth_service.py` passed. `PYTHONPATH=task-manager-api python3` smoke checks verified password hashing, legacy rehash detection, and signed token generation.
 
-### [HIGH] Route Modules Act As Controllers, Services, Repositories, And Serializers At Once
+### [FIXED] [HIGH] Route Modules Act As Controllers, Services, Repositories, And Serializers At Once
 File: `task-manager-api/routes/task_routes.py:11-299`, `task-manager-api/routes/user_routes.py:10-211`, `task-manager-api/routes/report_routes.py:12-223`  
 Category: Architecture | Maintainability  
 Description: The three blueprint modules concentrate request parsing, validation, ORM queries, business rules, response serialization, statistics calculation, and transaction control in single files. For example, `create_task()` and `update_task()` validate fields, look up foreign keys, parse dates, mutate models, and commit transactions inline, while report endpoints compute aggregates directly inside route handlers.  
 Impact: The HTTP layer is tightly coupled to persistence and domain logic, which makes testing, reuse, and safe change difficult. Small behavior changes require editing large route files with many unrelated responsibilities.  
 Recommendation: Refactor toward explicit controllers/services and model or repository boundaries. Keep routes limited to HTTP mapping, move business rules and orchestration into services, and centralize serialization logic in model schemas or presenter helpers.  
 MVC Target: Controller  
+Fixed by introducing `controllers/` and domain `services/` modules so the Flask blueprints now act as thin HTTP adapters only.
+Validation: `python3 -m py_compile` passed for all new controllers, services, and route modules. Runtime import smoke checks remain blocked here because `flask_sqlalchemy` is unavailable in the current environment.
 
 ### [HIGH] Repeated ORM Access Inside Loops Creates N+1 Query Patterns In List And Report Endpoints
 File: `task-manager-api/routes/task_routes.py:14-59`, `task-manager-api/routes/report_routes.py:53-68`, `task-manager-api/routes/report_routes.py:157-165`  
@@ -111,7 +113,7 @@ The dominant framework-level deprecation issue in the analyzed scope is repeated
 
 1. [FIXED] Extract an environment-aware config module and remove hardcoded Flask and SMTP secrets, debug defaults, and database settings from source files.
 2. [FIXED] Replace the current authentication flow with safe password hashing, password-free serializers, and signed auth token generation behind a dedicated auth service.
-3. Split each route module into thinner HTTP adapters plus controller/service layers for tasks, users, reports, and categories.
+3. [FIXED] Split each route module into thinner HTTP adapters plus controller/service layers for tasks, users, reports, and categories.
 4. Centralize validation and normalization for task, user, and category payloads using shared schemas or a consistent helper/service layer.
 5. Refactor list and report queries to avoid N+1 access patterns by using eager loading or aggregate SQL queries.
 6. Introduce centralized error handling and structured logging instead of broad bare exceptions.
