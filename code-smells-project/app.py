@@ -1,4 +1,4 @@
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify
 from flask_cors import CORS
 import controllers
 from database import get_db
@@ -52,39 +52,6 @@ def create_app():
                 "health": "/health"
             }
         })
-
-    @app.route("/admin/reset-db", methods=["POST"])
-    def reset_database():
-        db = get_db()
-        cursor = db.cursor()
-        cursor.execute("DELETE FROM itens_pedido")
-        cursor.execute("DELETE FROM pedidos")
-        cursor.execute("DELETE FROM produtos")
-        cursor.execute("DELETE FROM usuarios")
-        db.commit()
-        print("!!! BANCO DE DADOS RESETADO !!!")
-        return jsonify({"mensagem": "Banco de dados resetado", "sucesso": True}), 200
-
-    @app.route("/admin/query", methods=["POST"])
-    def executar_query():
-        dados = request.get_json()
-        query = dados.get("sql", "")
-        if not query:
-            return jsonify({"erro": "Query não informada"}), 400
-
-        db = get_db()
-        cursor = db.cursor()
-        try:
-            cursor.execute(query)
-            if query.strip().upper().startswith("SELECT"):
-                rows = cursor.fetchall()
-                result = [dict(row) for row in rows]
-                return jsonify({"dados": result, "sucesso": True}), 200
-
-            db.commit()
-            return jsonify({"mensagem": "Query executada", "sucesso": True}), 200
-        except Exception as e:
-            return jsonify({"erro": str(e)}), 500
 
     return app
 

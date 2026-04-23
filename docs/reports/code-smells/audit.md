@@ -44,21 +44,23 @@ Recommendation: Move runtime configuration into an environment-aware config modu
 MVC Target: Config  
 Validation: `python3 -m py_compile app.py config.py controllers.py models.py database.py` passed; `python3` import smoke test for `app` passed.  
 
-### [CRITICAL] Unauthenticated Destructive Database Reset Endpoint
+### [FIXED] [CRITICAL] Unauthenticated Destructive Database Reset Endpoint
 File: `code-smells-project/app.py:47-57`  
 Category: Security | Reliability  
 Description: `/admin/reset-db` deletes all records from the main tables and is publicly registered with no authentication, authorization, or environment guard.  
 Impact: Any caller with network access can erase core business data in a single request.  
 Recommendation: Remove the endpoint from runtime code or protect it with strict admin authentication, environment gating, and audit logging.  
 MVC Target: Controller  
+Validation: `python3 -m py_compile app.py config.py controllers.py models.py database.py` passed; route smoke check confirmed `/admin/reset-db` is absent from `app.url_map`.  
 
-### [CRITICAL] Unauthenticated Arbitrary SQL Execution Endpoint
+### [FIXED] [CRITICAL] Unauthenticated Arbitrary SQL Execution Endpoint
 File: `code-smells-project/app.py:59-78`  
 Category: Security  
 Description: `/admin/query` executes raw SQL supplied by the request body and commits non-`SELECT` statements directly against the database.  
 Impact: This enables complete data exfiltration, modification, or destruction while bypassing every domain rule in the application.  
 Recommendation: Remove arbitrary SQL execution from the HTTP surface. If admin diagnostics are required, expose explicit authenticated operations instead.  
 MVC Target: Controller  
+Validation: `python3 -m py_compile app.py config.py controllers.py models.py database.py` passed; route smoke check confirmed `/admin/query` is absent from `app.url_map`.  
 
 ### [CRITICAL] SQL Injection Across Product, User, Order, And Search Queries
 File: `code-smells-project/models.py:28-29`, `code-smells-project/models.py:47-60`, `code-smells-project/models.py:68-68`, `code-smells-project/models.py:92-92`, `code-smells-project/models.py:109-110`, `code-smells-project/models.py:126-129`, `code-smells-project/models.py:140-165`, `code-smells-project/models.py:174-174`, `code-smells-project/models.py:188-192`, `code-smells-project/models.py:220-224`, `code-smells-project/models.py:279-280`, `code-smells-project/models.py:289-299`  
@@ -179,7 +181,7 @@ No deprecated Flask API usage was identified in the inspected files. The main is
 ## Proposed Phase 3 Refactoring Plan
 
 1. [FIXED] Introduce an environment-aware configuration module and application factory to separate config, bootstrapping, and route registration.
-2. Remove or hard-disable `/admin/reset-db` and `/admin/query`, or replace them with explicitly scoped authenticated admin operations if the exercise requires them.
+2. [FIXED] Remove or hard-disable `/admin/reset-db` and `/admin/query`, or replace them with explicitly scoped authenticated admin operations if the exercise requires them.
 3. Replace all concatenated SQL with parameterized queries and reorganize persistence code into cohesive repository/model modules.
 4. Introduce request-scoped SQLite connection handling with deterministic teardown instead of a module-level global connection.
 5. Split `models.py` into product, user/auth, order, and reporting modules, and move workflow orchestration into services.
