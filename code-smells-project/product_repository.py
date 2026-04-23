@@ -89,7 +89,21 @@ def atualizar_estoque(produto_id, quantidade):
         "UPDATE produtos SET estoque = estoque - ? WHERE id = ?",
         (quantidade, produto_id),
     )
-    return True
+    return cursor.rowcount == 1
+
+
+def reservar_estoque(produto_id, quantidade):
+    db = get_db()
+    cursor = db.cursor()
+    cursor.execute(
+        """
+        UPDATE produtos
+        SET estoque = estoque - ?
+        WHERE id = ? AND estoque >= ?
+        """,
+        (quantidade, produto_id, quantidade),
+    )
+    return cursor.rowcount == 1
 
 
 def buscar_produtos(termo, categoria=None, preco_min=None, preco_max=None):

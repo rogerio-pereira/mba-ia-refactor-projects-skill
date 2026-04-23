@@ -44,13 +44,14 @@ Recommendation: Remover `.env` do versionamento, manter apenas `.env.example` co
 MVC Target: Config  
 Validation: `python3 -m py_compile code-smells-project/*.py` passed; production boot with placeholder secret now fails explicitly and development boot still succeeds.
 
-### [HIGH] Criação de pedido não protege estoque contra concorrência e pode gerar overselling
+### [FIXED] [HIGH] Criação de pedido não protege estoque contra concorrência e pode gerar overselling
 File: `code-smells-project/order_service.py:12-33`, `code-smells-project/product_repository.py:85-91`  
 Category: Reliability | Architecture  
 Description: A validação de estoque é feita em memória antes da escrita, e o decremento ocorre depois com `UPDATE produtos SET estoque = estoque - ? WHERE id = ?`, sem cláusula de guarda (`estoque >= ?`) e sem revalidação atômica no banco. Em cenários concorrentes, dois requests podem aprovar o mesmo estoque.  
 Impact: O sistema pode vender itens acima do disponível, produzindo inconsistência financeira e operacional. O `commit` ao final da transação não resolve a condição de corrida porque a decisão já foi tomada sobre dados potencialmente obsoletos.  
 Recommendation: Mover a verificação de disponibilidade para uma atualização atômica por item, com rollback ao primeiro conflito, ou aplicar bloqueio/transação com checagem no banco. Idealmente, encapsular a política de reserva de estoque em uma camada de serviço/repositório transacional explícita.  
 MVC Target: Service  
+Validation: `python3 -m py_compile code-smells-project/*.py` passed; `app.test_client()` smoke test confirmed a second order fails after the first one exhausts the same stock.
 
 ### [HIGH] Atualização de status aceita pedidos inexistentes e ainda dispara notificação
 File: `code-smells-project/order_repository.py:51-59`, `code-smells-project/order_service.py:83-85`, `code-smells-project/controllers.py:106-110`  
@@ -115,7 +116,7 @@ Nenhum uso claramente depreciado de Flask 3.1.1 foi identificado nos arquivos an
 ## Proposed Phase 3 Refactoring Plan
 
 1. [FIXED] Remover `.env` do controle de versão, tratar `SECRET_KEY` como segredo externo e endurecer a validação de configuração por ambiente.
-2. Reescrever a criação de pedidos para usar reserva/decremento de estoque atômicos e falhar corretamente em conflitos de concorrência.
+2. [FIXED] Reescrever a criação de pedidos para usar reserva/decremento de estoque atômicos e falhar corretamente em conflitos de concorrência.
 3. Corrigir o fluxo de atualização de status para validar existência do pedido antes de persistir e notificar.
 4. Reforçar o schema SQLite com constraints reais (`NOT NULL`, `UNIQUE`, `FOREIGN KEY`) e alinhar validadores ao novo contrato.
 5. Extrair consultas operacionais de `health_check()` para uma camada própria de serviço/repositório.

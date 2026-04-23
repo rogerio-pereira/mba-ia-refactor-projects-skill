@@ -21,13 +21,15 @@ def criar_pedido(usuario_id, itens):
         pedido_id = order_repository.criar_pedido(usuario_id, "pendente", total)
         for item in itens:
             produto = produtos[item["produto_id"]]
+            if not product_repository.reservar_estoque(item["produto_id"], item["quantidade"]):
+                db.rollback()
+                return {"erro": "Estoque insuficiente para " + produto["nome"]}
             order_repository.criar_item_pedido(
                 pedido_id,
                 item["produto_id"],
                 item["quantidade"],
                 produto["preco"],
             )
-            product_repository.atualizar_estoque(item["produto_id"], item["quantidade"])
 
         db.commit()
         notification_service.notificar_pedido_criado(pedido_id, usuario_id)
