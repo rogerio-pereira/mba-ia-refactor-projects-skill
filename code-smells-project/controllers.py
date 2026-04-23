@@ -89,10 +89,6 @@ def criar_pedido():
     if "erro" in resultado:
         raise AppError(resultado["erro"], 400)
 
-    print("ENVIANDO EMAIL: Pedido " + str(resultado["pedido_id"]) + " criado para usuario " + str(dados["usuario_id"]))
-    print("ENVIANDO SMS: Seu pedido foi recebido!")
-    print("ENVIANDO PUSH: Novo pedido recebido pelo sistema")
-
     return jsonify({
         "dados": resultado,
         "sucesso": True,
@@ -110,11 +106,6 @@ def listar_todos_pedidos():
 def atualizar_status_pedido(pedido_id):
     novo_status = validate_status_payload(request.get_json(silent=True))
     order_service.atualizar_status_pedido(pedido_id, novo_status)
-
-    if novo_status == "aprovado":
-        print("NOTIFICAÇÃO: Pedido " + str(pedido_id) + " foi aprovado! Preparar envio.")
-    if novo_status == "cancelado":
-        print("NOTIFICAÇÃO: Pedido " + str(pedido_id) + " cancelado. Devolver estoque.")
 
     return jsonify({"sucesso": True, "mensagem": "Status atualizado"}), 200
 

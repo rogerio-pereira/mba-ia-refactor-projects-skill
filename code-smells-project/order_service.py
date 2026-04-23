@@ -1,4 +1,5 @@
 from database import get_db
+import notification_service
 import order_repository
 import product_repository
 
@@ -8,27 +9,32 @@ def criar_pedido(usuario_id, itens):
     produtos = product_repository.get_produtos_por_ids([item["produto_id"] for item in itens])
     total = 0
 
-    for item in itens:
-        produto = produtos.get(item["produto_id"])
-        if produto is None:
-            return {"erro": "Produto " + str(item["produto_id"]) + " não encontrado"}
-        if produto["estoque"] < item["quantidade"]:
-            return {"erro": "Estoque insuficiente para " + produto["nome"]}
-        total += produto["preco"] * item["quantidade"]
+    try:
+        for item in itens:
+            produto = produtos.get(item["produto_id"])
+            if produto is None:
+                return {"erro": "Produto " + str(item["produto_id"]) + " não encontrado"}
+            if produto["estoque"] < item["quantidade"]:
+                return {"erro": "Estoque insuficiente para " + produto["nome"]}
+            total += produto["preco"] * item["quantidade"]
 
-    pedido_id = order_repository.criar_pedido(usuario_id, "pendente", total)
-    for item in itens:
-        produto = produtos[item["produto_id"]]
-        order_repository.criar_item_pedido(
-            pedido_id,
-            item["produto_id"],
-            item["quantidade"],
-            produto["preco"],
-        )
-        product_repository.atualizar_estoque(item["produto_id"], item["quantidade"])
+        pedido_id = order_repository.criar_pedido(usuario_id, "pendente", total)
+        for item in itens:
+            produto = produtos[item["produto_id"]]
+            order_repository.criar_item_pedido(
+                pedido_id,
+                item["produto_id"],
+                item["quantidade"],
+                produto["preco"],
+            )
+            product_repository.atualizar_estoque(item["produto_id"], item["quantidade"])
 
-    db.commit()
-    return {"pedido_id": pedido_id, "total": total}
+        db.commit()
+        notification_service.notificar_pedido_criado(pedido_id, usuario_id)
+        return {"pedido_id": pedido_id, "total": total}
+    except Exception:
+        db.rollback()
+        raise
 
 
 def listar_pedidos(rows):
@@ -75,4 +81,6 @@ def get_todos_pedidos():
 
 
 def atualizar_status_pedido(pedido_id, novo_status):
-    return order_repository.atualizar_status_pedido(pedido_id, novo_status)
+    resultado = order_repository.atualizar_status_pedido(pedido_id, novo_status)
+    notification_service.notificar_status_pedido(pedido_id, novo_status)
+    return resultado

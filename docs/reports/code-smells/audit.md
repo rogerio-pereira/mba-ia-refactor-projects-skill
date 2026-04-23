@@ -116,13 +116,14 @@ Recommendation: Split the module into cohesive repositories/services by domain, 
 MVC Target: Model  
 Validation: `python3 -m py_compile app.py config.py controllers.py database.py models.py product_repository.py user_repository.py order_repository.py report_repository.py auth_service.py order_service.py` passed; app-context smoke test confirmed the compatibility facade still serves product and order reads.  
 
-### [HIGH] Order Workflow And Notification Side Effects Are Embedded In Controller Code
+### [FIXED] [HIGH] Order Workflow And Notification Side Effects Are Embedded In Controller Code
 File: `code-smells-project/controllers.py:188-220`  
 Category: Architecture  
 Description: The order creation handler performs request validation, invokes model workflow, interprets errors, and triggers email/SMS/push side effects via `print`.  
 Impact: HTTP handling, business orchestration, and infrastructure concerns are tightly coupled, making testing and future changes unnecessarily expensive.  
 Recommendation: Move order creation and notification orchestration into a dedicated service layer, leaving the controller responsible only for HTTP mapping.  
 MVC Target: Service  
+Validation: `python3 -m py_compile app.py config.py controllers.py database.py models.py product_repository.py user_repository.py order_repository.py report_repository.py auth_service.py order_service.py notification_service.py validators.py errors.py constants.py` passed; `app.test_client()` smoke test confirmed order creation and status update still succeed through service-owned notification flow.  
 
 ### [FIXED] [MEDIUM] N+1 Query Pattern In User Order Listing
 File: `code-smells-project/models.py:171-201`  
@@ -142,13 +143,14 @@ Recommendation: Extract a shared order retrieval routine with optional filters a
 MVC Target: Model  
 Validation: `python3 -m py_compile app.py config.py controllers.py database.py models.py product_repository.py user_repository.py order_repository.py report_repository.py auth_service.py order_service.py validators.py errors.py constants.py` passed; app-context smoke test confirmed all-orders listings reuse the same batched order service path.  
 
-### [MEDIUM] Order Creation Lacks Transaction Boundaries And Re-Reads Product State
+### [FIXED] [MEDIUM] Order Creation Lacks Transaction Boundaries And Re-Reads Product State
 File: `code-smells-project/models.py:133-169`  
 Category: Reliability  
 Description: Order creation validates inventory in one loop, then re-queries products in a second loop, inserts rows, and decrements stock without an explicit transaction or rollback strategy.  
 Impact: Partial writes or concurrent requests can leave orders and stock in inconsistent states.  
 Recommendation: Wrap the workflow in an explicit transaction, fetch product state once, validate atomically, and update stock with guarded writes.  
 MVC Target: Service  
+Validation: `python3 -m py_compile app.py config.py controllers.py database.py models.py product_repository.py user_repository.py order_repository.py report_repository.py auth_service.py order_service.py notification_service.py validators.py errors.py constants.py` passed; `app.test_client()` smoke test created an order and updated its status successfully after the transactional service refactor.  
 
 ### [FIXED] [MEDIUM] Request Validation Is Repeated And Inconsistent Across Controllers
 File: `code-smells-project/controllers.py:24-62`, `code-smells-project/controllers.py:64-96`, `code-smells-project/controllers.py:146-165`, `code-smells-project/controllers.py:167-186`, `code-smells-project/controllers.py:188-220`, `code-smells-project/controllers.py:237-255`  
