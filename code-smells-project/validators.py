@@ -2,6 +2,12 @@ from constants import VALID_CATEGORIES, VALID_ORDER_STATUSES
 from errors import AppError
 
 
+def _normalize_text(value):
+    if not isinstance(value, str):
+        return ""
+    return value.strip()
+
+
 def _require_dict(data):
     if not isinstance(data, dict):
         raise AppError("Dados inválidos", 400)
@@ -51,12 +57,14 @@ def validate_produto_payload(data):
 def validate_usuario_payload(data):
     data = _require_dict(data)
 
-    nome = data.get("nome", "")
-    email = data.get("email", "")
-    senha = data.get("senha", "")
+    nome = _normalize_text(data.get("nome", ""))
+    email = _normalize_text(data.get("email", "")).lower()
+    senha = _normalize_text(data.get("senha", ""))
 
     if not nome or not email or not senha:
         raise AppError("Nome, email e senha são obrigatórios", 400)
+    if "@" not in email or "." not in email.split("@")[-1]:
+        raise AppError("Email inválido", 400)
 
     return {"nome": nome, "email": email, "senha": senha}
 
@@ -64,8 +72,8 @@ def validate_usuario_payload(data):
 def validate_login_payload(data):
     data = _require_dict(data)
 
-    email = data.get("email", "")
-    senha = data.get("senha", "")
+    email = _normalize_text(data.get("email", "")).lower()
+    senha = _normalize_text(data.get("senha", ""))
     if not email or not senha:
         raise AppError("Email e senha são obrigatórios", 400)
 

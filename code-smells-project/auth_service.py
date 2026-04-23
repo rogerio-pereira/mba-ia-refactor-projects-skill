@@ -1,4 +1,5 @@
 import user_repository
+from errors import AppError
 from werkzeug.security import check_password_hash, generate_password_hash
 
 
@@ -7,6 +8,9 @@ def _is_password_hash(value):
 
 
 def criar_usuario(nome, email, senha, tipo="cliente"):
+    if user_repository.get_usuario_por_email(email) is not None:
+        raise AppError("Email já cadastrado", 400)
+
     senha_hash = generate_password_hash(senha)
     return user_repository.criar_usuario(nome, email, senha_hash, tipo)
 

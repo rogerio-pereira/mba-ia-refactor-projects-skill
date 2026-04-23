@@ -62,13 +62,14 @@ Recommendation: Verificar se o `UPDATE` afetou uma linha, lançar erro 404 quand
 MVC Target: Service  
 Validation: `python3 -m py_compile code-smells-project/*.py` passed; `PUT /pedidos/999/status` now returns `404` and does not report success.
 
-### [HIGH] Schema permissivo demais compromete integridade de dados
+### [FIXED] [HIGH] Schema permissivo demais compromete integridade de dados
 File: `code-smells-project/database.py:38-77`, `code-smells-project/validators.py:51-85`, `code-smells-project/auth_service.py:14-34`  
 Category: Architecture | Reliability  
 Description: As tabelas são criadas sem `NOT NULL`, sem `UNIQUE` para `usuarios.email` e sem `FOREIGN KEY` entre `pedidos`, `itens_pedido`, `usuarios` e `produtos`. A validação de aplicação não fecha essas lacunas: e-mails não são validados quanto a formato/unicidade e pedidos aceitam `usuario_id` sem confirmar existência do usuário.  
 Impact: O banco aceita registros órfãos, duplicados e semanticamente inválidos, o que degrada a confiabilidade do login, relatórios e fluxo de pedidos. Em SQLite, deixar a integridade apenas na camada Python é frágil e difícil de auditar.  
 Recommendation: Reforçar o schema com constraints de banco (`NOT NULL`, `UNIQUE`, `FOREIGN KEY`), habilitar `PRAGMA foreign_keys = ON`, validar unicidade/forma de e-mail e checar existência de usuário antes da criação do pedido.  
 MVC Target: Model  
+Validation: `python3 -m py_compile code-smells-project/*.py` passed; fresh database boot now creates `UNIQUE`/`FOREIGN KEY` constraints, user creation rejects invalid or duplicate emails, orders reject unknown users, and legacy-schema boot migrates data successfully.
 
 ### [MEDIUM] Controller de health bypassa service/repository e conhece detalhes de persistência
 File: `code-smells-project/controllers.py:116-136`  
@@ -119,7 +120,7 @@ Nenhum uso claramente depreciado de Flask 3.1.1 foi identificado nos arquivos an
 1. [FIXED] Remover `.env` do controle de versão, tratar `SECRET_KEY` como segredo externo e endurecer a validação de configuração por ambiente.
 2. [FIXED] Reescrever a criação de pedidos para usar reserva/decremento de estoque atômicos e falhar corretamente em conflitos de concorrência.
 3. [FIXED] Corrigir o fluxo de atualização de status para validar existência do pedido antes de persistir e notificar.
-4. Reforçar o schema SQLite com constraints reais (`NOT NULL`, `UNIQUE`, `FOREIGN KEY`) e alinhar validadores ao novo contrato.
+4. [FIXED] Reforçar o schema SQLite com constraints reais (`NOT NULL`, `UNIQUE`, `FOREIGN KEY`) e alinhar validadores ao novo contrato.
 5. Extrair consultas operacionais de `health_check()` para uma camada própria de serviço/repositório.
 6. Separar a lógica de desconto do `report_repository` e mantê-la em um serviço de domínio.
 7. Eliminar código morto e camadas de compatibilidade que não participam do fluxo ativo.

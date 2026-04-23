@@ -3,10 +3,15 @@ from errors import AppError
 import notification_service
 import order_repository
 import product_repository
+import user_repository
 
 
 def criar_pedido(usuario_id, itens):
     db = get_db()
+    usuario = user_repository.get_usuario_por_id(usuario_id)
+    if usuario is None:
+        return {"erro": "Usuário não encontrado"}
+
     produtos = product_repository.get_produtos_por_ids([item["produto_id"] for item in itens])
     total = 0
 
