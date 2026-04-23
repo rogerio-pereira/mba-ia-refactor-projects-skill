@@ -25,6 +25,7 @@ The skill runs in three sequential phases:
 - Prefer small, reversible edits that follow the project's existing framework conventions.
 - Never fabricate findings. Every finding must include an exact file path and line number or line range.
 - Do not assume missing context. If a necessary command, endpoint list, or runtime prerequisite cannot be inferred, state the uncertainty and choose the safest validation path.
+- If no anti-patterns are detected, simply report the project analysis and state that no issues were found. Do not proceed to refactoring without findings.
 
 ## Required Reference Knowledge
 
