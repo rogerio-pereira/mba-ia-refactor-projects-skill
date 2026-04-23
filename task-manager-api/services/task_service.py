@@ -1,5 +1,7 @@
 from datetime import datetime
 
+from sqlalchemy.orm import joinedload
+
 from database import db
 from models.category import Category
 from models.task import Task
@@ -27,22 +29,17 @@ class TaskService:
             'overdue': task.is_overdue(),
         }
 
-        if task.user_id:
-            user = User.query.get(task.user_id)
-            task_data['user_name'] = user.name if user else None
-        else:
-            task_data['user_name'] = None
-
-        if task.category_id:
-            category = Category.query.get(task.category_id)
-            task_data['category_name'] = category.name if category else None
-        else:
-            task_data['category_name'] = None
+        task_data['user_name'] = task.user.name if task.user else None
+        task_data['category_name'] = task.category.name if task.category else None
 
         return task_data
 
     def get_tasks(self):
-        return [self._serialize_task(task) for task in Task.query.all()]
+        tasks = Task.query.options(
+            joinedload(Task.user),
+            joinedload(Task.category),
+        ).all()
+        return [self._serialize_task(task) for task in tasks]
 
     def get_task(self, task_id):
         task = Task.query.get(task_id)

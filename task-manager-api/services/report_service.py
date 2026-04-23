@@ -1,5 +1,7 @@
 from datetime import datetime, timedelta
 
+from sqlalchemy import func
+
 from models.category import Category
 from models.task import Task
 from models.user import User
@@ -30,11 +32,23 @@ class ReportService:
             Task.updated_at >= seven_days_ago
         ).count()
 
+        task_totals = dict(
+            Task.query.with_entities(Task.user_id, func.count(Task.id))
+            .filter(Task.user_id.isnot(None))
+            .group_by(Task.user_id)
+            .all()
+        )
+        completed_totals = dict(
+            Task.query.with_entities(Task.user_id, func.count(Task.id))
+            .filter(Task.user_id.isnot(None), Task.status == 'done')
+            .group_by(Task.user_id)
+            .all()
+        )
+
         user_stats = []
         for user in User.query.all():
-            user_tasks = Task.query.filter_by(user_id=user.id).all()
-            total = len(user_tasks)
-            completed = sum(1 for task in user_tasks if task.status == 'done')
+            total = task_totals.get(user.id, 0)
+            completed = completed_totals.get(user.id, 0)
             user_stats.append({
                 'user_id': user.id,
                 'user_name': user.name,

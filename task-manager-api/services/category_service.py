@@ -1,3 +1,5 @@
+from sqlalchemy import func
+
 from database import db
 from models.category import Category
 from models.task import Task
@@ -9,10 +11,16 @@ class CategoryService:
         self.validation_service = ValidationService()
 
     def get_categories(self):
+        task_counts = dict(
+            db.session.query(Task.category_id, func.count(Task.id))
+            .filter(Task.category_id.isnot(None))
+            .group_by(Task.category_id)
+            .all()
+        )
         result = []
         for category in Category.query.all():
             category_data = category.to_dict()
-            category_data['task_count'] = Task.query.filter_by(category_id=category.id).count()
+            category_data['task_count'] = task_counts.get(category.id, 0)
             result.append(category_data)
         return result
 

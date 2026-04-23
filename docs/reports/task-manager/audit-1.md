@@ -65,13 +65,15 @@ MVC Target: Controller
 Fixed by introducing `controllers/` and domain `services/` modules so the Flask blueprints now act as thin HTTP adapters only.
 Validation: `python3 -m py_compile` passed for all new controllers, services, and route modules. Runtime import smoke checks remain blocked here because `flask_sqlalchemy` is unavailable in the current environment.
 
-### [HIGH] Repeated ORM Access Inside Loops Creates N+1 Query Patterns In List And Report Endpoints
+### [FIXED] [HIGH] Repeated ORM Access Inside Loops Creates N+1 Query Patterns In List And Report Endpoints
 File: `task-manager-api/routes/task_routes.py:14-59`, `task-manager-api/routes/report_routes.py:53-68`, `task-manager-api/routes/report_routes.py:157-165`  
 Category: Performance | Maintainability  
 Description: `GET /tasks` loads all tasks and then performs additional `User.query.get()` and `Category.query.get()` calls per task. `GET /reports/summary` loads all users and then queries tasks again for each user, and `GET /categories` counts tasks with a separate query per category.  
 Impact: Response time and database round trips grow linearly with result size, which will degrade quickly as the dataset grows and makes report endpoints unnecessarily expensive.  
 Recommendation: Replace per-item lookups with eager loading (`joinedload`/relationships), grouped aggregate queries, or batched reporting queries owned by dedicated repository/report services.  
 MVC Target: Model  
+Fixed by eager-loading task relationships in `TaskService.get_tasks()` and replacing per-user/per-category counting loops with grouped aggregate queries in report and category services.
+Validation: `python3 -m py_compile task-manager-api/services/task_service.py task-manager-api/services/report_service.py task-manager-api/services/category_service.py` passed.
 
 ### [FIXED] [HIGH] Validation And Business Rules Are Duplicated Across Routes While The Shared Helper Layer Is Largely Unused
 File: `task-manager-api/routes/task_routes.py:85-145`, `task-manager-api/routes/task_routes.py:156-215`, `task-manager-api/routes/user_routes.py:42-90`, `task-manager-api/routes/user_routes.py:92-132`, `task-manager-api/routes/report_routes.py:167-209`, `task-manager-api/utils/helpers.py:57-116`  
@@ -117,7 +119,7 @@ The dominant framework-level deprecation issue in the analyzed scope is repeated
 2. [FIXED] Replace the current authentication flow with safe password hashing, password-free serializers, and signed auth token generation behind a dedicated auth service.
 3. [FIXED] Split each route module into thinner HTTP adapters plus controller/service layers for tasks, users, reports, and categories.
 4. [FIXED] Centralize validation and normalization for task, user, and category payloads using shared schemas or a consistent helper/service layer.
-5. Refactor list and report queries to avoid N+1 access patterns by using eager loading or aggregate SQL queries.
+5. [FIXED] Refactor list and report queries to avoid N+1 access patterns by using eager loading or aggregate SQL queries.
 6. Introduce centralized error handling and structured logging instead of broad bare exceptions.
 7. Replace legacy `Query.get()` usage with `db.session.get(...)` and move ORM access behind clearer boundaries.
 8. Create an application factory/composition root so app creation, DB initialization, seeding, and server startup are decoupled.
