@@ -71,21 +71,23 @@ Inspect project metadata and source files to produce a concise analysis summary.
 
 Required output:
 
-```text
-================================
-PHASE 1: PROJECT ANALYSIS
-================================
-Language:      <detected language and version when available>
-Framework:     <detected framework and version when available>
-Dependencies:  <key runtime dependencies>
-Domain:        <inferred application domain>
-Architecture:  <current structure and main violations>
-Source files:  <count and scope analyzed>
-Entry point:   <main boot file or command>
-Routes:        <route modules or inferred endpoint list>
-Database:      <database/client/ORM/files when detectable>
-================================
+```markdown
+## Phase 1: Project Analysis
+
+| Item | Analysis |
+| --- | --- |
+| Language | <detected language and version when available> |
+| Framework | <detected framework and version when available> |
+| Dependencies | <key runtime dependencies> |
+| Domain | <inferred application domain> |
+| Architecture | <current structure and main violations> |
+| Source files | <count and scope analyzed> |
+| Entry point | <main boot file or command> |
+| Routes | <route modules or inferred endpoint list> |
+| Database | <database/client/ORM/files when detectable> |
 ```
+
+Render this section as Markdown, not as a plain-text banner with `====`.
 
 Detection guidance:
 
@@ -123,9 +125,9 @@ Recommendation: What should change.
 MVC Target: Model | View/Route | Controller | Config | Middleware | Composition Root | Service | Helper
 ```
 
-After the report, stop and ask:
+After the report, stop and ask this exact plain sentence:
 
-```text
+```markdown
 Phase 2 complete. Proceed with MVC refactoring (Phase 3)? [y/n]
 ```
 
@@ -184,20 +186,20 @@ When Phase 3 is running, follow the validation rules in `.agents/skills/refactor
 
 Required validation output:
 
-```text
-================================
-PHASE 3: REFACTORING COMPLETE
-================================
-## New Project Structure
+```markdown
+## Phase 3: Refactoring Complete
+
+### New Project Structure
 <summarize MVC directories and entry point>
 
-## Validation
-  <pass/fail> Application boots without errors
-  <pass/fail> Original endpoints respond correctly or route compatibility was verified
-  <pass/fail> Tests/lint executed when available
-  <pass/fail> Remaining high-risk anti-patterns reviewed
-================================
+### Validation
+- <pass/fail> Application boots without errors
+- <pass/fail> Original endpoints respond correctly or route compatibility was verified
+- <pass/fail> Tests/lint executed when available
+- <pass/fail> Remaining high-risk anti-patterns reviewed
 ```
+
+Render this section as Markdown headings and bullets, not as a plain-text banner with `====`.
 
 If validation fails, diagnose the failure, fix it when feasible, and rerun validation. If it cannot be fixed in the current environment, clearly report the blocker, exact failing command, and remaining risk.
 
