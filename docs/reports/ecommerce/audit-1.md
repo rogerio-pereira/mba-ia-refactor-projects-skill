@@ -89,21 +89,23 @@ Recommendation: Enforce referential integrity with foreign keys, define a consis
 MVC Target: Model  
 Validation: deleting `/api/users/1` now removes dependent enrollments and payments, and direct database checks confirmed no orphaned rows remain after the transaction.  
 
-### [MEDIUM] Request Validation Is Incomplete And Uses Obscure Payload Contracts
+### [FIXED] [MEDIUM] Request Validation Is Incomplete And Uses Obscure Payload Contracts
 File: `ecommerce-api-legacy/src/AppManager.js:29-35`, `ecommerce-api-legacy/api.http:7-12`  
 Category: Reliability | Maintainability  
 Description: The checkout handler reads abbreviated fields such as `usr`, `eml`, `pwd`, `c_id`, and `card`, but only validates `usr`, `eml`, `c_id`, and `card`. It accepts any email shape, any card string, and allows password omission for new users.  
 Impact: Invalid or ambiguous input reaches the persistence layer, weakens the API contract, and increases coupling between clients and undocumented internal field names.  
 Recommendation: Introduce explicit request validation with clear field names or a compatibility mapping layer, validate formats consistently, and reject incomplete checkout requests before business logic runs.  
 MVC Target: Controller  
+Validation: checkout now accepts both legacy and explicit field names, and invalid payloads return structured `400` responses with validation details.  
 
-### [MEDIUM] Error Handling Is Inconsistent And Frequently Discards Diagnostic Context
+### [FIXED] [MEDIUM] Error Handling Is Inconsistent And Frequently Discards Diagnostic Context
 File: `ecommerce-api-legacy/src/AppManager.js:35-38`, `ecommerce-api-legacy/src/AppManager.js:40-41`, `ecommerce-api-legacy/src/AppManager.js:50-61`, `ecommerce-api-legacy/src/AppManager.js:83-127`, `ecommerce-api-legacy/src/AppManager.js:133-135`  
 Category: Reliability  
 Description: The API returns plain-text ad hoc messages, mixes Portuguese strings with HTTP responses, ignores some callback errors entirely, and in `DELETE /api/users/:id` sends success regardless of `err`. There is no centralized error middleware or response standard.  
 Impact: Operational failures can be hidden from clients and maintainers, while API behavior becomes difficult to test and evolve consistently.  
 Recommendation: Introduce centralized error handling middleware, standardize response payloads, and ensure every database callback either handles or propagates errors explicitly.  
 MVC Target: Middleware  
+Validation: centralized error middleware now returns JSON errors for invalid checkout payloads and invalid user IDs, while boot smoke tests still pass.  
 
 ### [MEDIUM] Hidden Global Mutable State In Utility Module Creates Uncontrolled Side Effects
 File: `ecommerce-api-legacy/src/utils.js:9-15`, `ecommerce-api-legacy/src/AppManager.js:57-60`  
@@ -134,7 +136,7 @@ No clearly deprecated Express 4.18.2 APIs were identified in the analyzed files.
 4. [FIXED] Refactor checkout into a transactional service that atomically creates users, enrollments, payments, and audit logs.
 5. [FIXED] Protect administrative endpoints with authentication/authorization and redesign the financial report query to avoid N+1 access patterns.
 6. [FIXED] Enforce referential integrity in the schema and redesign destructive user deletion to preserve consistent domain state.
-7. Add centralized request validation and standardized error handling for all endpoints.
+7. [FIXED] Add centralized request validation and standardized error handling for all endpoints.
 8. Remove hidden global mutable state from `utils.js` and replace it with explicit collaborators or eliminate it entirely.
 9. [FIXED] Introduce an application factory to decouple bootstrapping from runtime server start.
 

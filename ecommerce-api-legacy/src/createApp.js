@@ -2,6 +2,7 @@ const express = require('express');
 const { config } = require('./config');
 const { createDatabase } = require('./db/connection');
 const { initDb } = require('./db/initDb');
+const { errorHandler } = require('./middleware/errorHandler');
 const { registerRoutes } = require('./routes');
 
 async function createApp() {
@@ -13,6 +14,7 @@ async function createApp() {
     app.use(express.json());
 
     registerRoutes(app, { db });
+    app.use(errorHandler);
 
     return { app, config };
 }
