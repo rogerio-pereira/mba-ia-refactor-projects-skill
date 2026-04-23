@@ -95,13 +95,14 @@ Impact: Operational metadata and secrets are disclosed to any caller through an 
 Recommendation: Restrict health responses to non-sensitive liveness data and move diagnostics behind authenticated operational tooling.  
 MVC Target: Controller  
 
-### [HIGH] Global Mutable SQLite Connection Shared Across Requests
+### [FIXED] [HIGH] Global Mutable SQLite Connection Shared Across Requests
 File: `code-smells-project/database.py:4-11`  
 Category: Reliability  
 Description: The database module stores a single module-level SQLite connection and disables thread checks with `check_same_thread=False`.  
 Impact: Shared mutable state creates hidden coupling between requests, makes transaction boundaries unclear, and can surface concurrency bugs under load.  
 Recommendation: Use request-scoped connection management, close connections on teardown, and wire database access from the composition root.  
 MVC Target: Composition Root  
+Validation: `python3 -m py_compile app.py config.py controllers.py models.py database.py` passed; app-context smoke test confirmed per-context connection reuse and teardown wiring.  
 
 ### [HIGH] God Model Module Concentrates Multiple Domains And Responsibilities
 File: `code-smells-project/models.py:1-314`  
@@ -184,7 +185,7 @@ No deprecated Flask API usage was identified in the inspected files. The main is
 1. [FIXED] Introduce an environment-aware configuration module and application factory to separate config, bootstrapping, and route registration.
 2. [FIXED] Remove or hard-disable `/admin/reset-db` and `/admin/query`, or replace them with explicitly scoped authenticated admin operations if the exercise requires them.
 3. [FIXED] Replace all concatenated SQL with parameterized queries and reorganize persistence code into cohesive repository/model modules.
-4. Introduce request-scoped SQLite connection handling with deterministic teardown instead of a module-level global connection.
+4. [FIXED] Introduce request-scoped SQLite connection handling with deterministic teardown instead of a module-level global connection.
 5. Split `models.py` into product, user/auth, order, and reporting modules, and move workflow orchestration into services.
 6. Hash passwords, verify them safely during login, and remove password fields from all API serializers.
 7. Extract request validation and add centralized error handling for consistent HTTP error responses.

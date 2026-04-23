@@ -1,7 +1,7 @@
 from flask import Flask, jsonify
 from flask_cors import CORS
 import controllers
-from database import get_db
+from database import close_db, get_db
 from config import Config
 
 def register_routes(app):
@@ -36,6 +36,7 @@ def create_app():
     if app.config["CORS_ORIGINS"]:
         CORS(app, resources={r"/*": {"origins": app.config["CORS_ORIGINS"]}})
 
+    app.teardown_appcontext(close_db)
     register_routes(app)
 
     @app.route("/")
@@ -59,7 +60,8 @@ def create_app():
 app = create_app()
 
 if __name__ == "__main__":
-    get_db()
+    with app.app_context():
+        get_db()
     print("=" * 50)
     print("SERVIDOR INICIADO")
     print("Rodando em http://localhost:5000")

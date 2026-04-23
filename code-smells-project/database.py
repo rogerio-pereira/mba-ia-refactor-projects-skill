@@ -1,15 +1,17 @@
 import sqlite3
-import os
+from flask import current_app, g
 
-db_connection = None
-db_path = "loja.db"
+
+def _connect():
+    db_path = current_app.config["DATABASE_PATH"]
+    connection = sqlite3.connect(db_path)
+    connection.row_factory = sqlite3.Row
+    return connection
 
 def get_db():
-    global db_connection
-    if db_connection is None:
-        db_connection = sqlite3.connect(db_path, check_same_thread=False)
-        db_connection.row_factory = sqlite3.Row
-        cursor = db_connection.cursor()
+    if "db_connection" not in g:
+        g.db_connection = _connect()
+        cursor = g.db_connection.cursor()
 
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS produtos (
@@ -51,7 +53,7 @@ def get_db():
                 preco_unitario REAL
             )
         """)
-        db_connection.commit()
+        g.db_connection.commit()
 
         cursor.execute("SELECT COUNT(*) FROM produtos")
         if cursor.fetchone()[0] == 0:
@@ -81,6 +83,12 @@ def get_db():
                 "INSERT INTO usuarios (nome, email, senha, tipo) VALUES (?, ?, ?, ?)",
                 usuarios
             )
-            db_connection.commit()
+            g.db_connection.commit()
 
-    return db_connection
+    return g.db_connection
+
+
+def close_db(_error=None):
+    db_connection = g.pop("db_connection", None)
+    if db_connection is not None:
+        db_connection.close()
