@@ -130,4 +130,14 @@ The dominant framework-level deprecation issue in the analyzed scope is repeated
 7. [FIXED] Replace legacy `Query.get()` usage with `db.session.get(...)` and move ORM access behind clearer boundaries.
 8. [FIXED] Create an application factory/composition root so app creation, DB initialization, seeding, and server startup are decoupled.
 
-Phase 2 complete. Proceed with MVC refactoring (Phase 3)? [y/n]
+## Phase 3: Refactoring Complete
+
+### New Project Structure
+`task-manager-api/app.py` now only starts the server, while `task-manager-api/app_factory.py` is the composition root for config, extension wiring, middleware, and blueprint registration. HTTP adapters live in `task-manager-api/routes/`, request orchestration lives in `task-manager-api/controllers/`, business and persistence coordination lives in `task-manager-api/services/`, and cross-cutting API errors are handled in `task-manager-api/middleware/`.
+
+### Validation
+- PASS `python3 -m compileall task-manager-api`
+- PASS `python3 -m py_compile task-manager-api/app.py task-manager-api/app_factory.py task-manager-api/seed.py`
+- PASS `. task-manager-api/.venv/bin/activate && pip install -r task-manager-api/requirements.txt`
+- PASS Flask `test_client()` smoke checks for `GET /health`, `POST /users`, `POST /login`, `POST /categories`, `POST /tasks`, `GET /tasks`, `GET /reports/summary`, and `GET /tasks/stats`
+- PASS Remaining high-risk anti-patterns reviewed; all findings in this report were implemented and marked `[FIXED]`
