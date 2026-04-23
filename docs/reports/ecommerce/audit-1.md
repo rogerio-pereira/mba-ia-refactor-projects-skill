@@ -141,4 +141,14 @@ No clearly deprecated Express 4.18.2 APIs were identified in the analyzed files.
 8. [FIXED] Remove hidden global mutable state from `utils.js` and replace it with explicit collaborators or eliminate it entirely.
 9. [FIXED] Introduce an application factory to decouple bootstrapping from runtime server start.
 
-Phase 2 complete. Proceed with MVC refactoring (Phase 3)? [y/n]
+## Phase 3: Refactoring Complete
+
+### New Project Structure
+`src/app.js` now only starts the server. Dependency wiring lives in `src/createApp.js`, database bootstrap moved to `src/db/`, HTTP entrypoints live under `src/routes/` and `src/controllers/`, domain workflows are isolated in `src/services/`, persistence logic is under `src/repositories/`, and cross-cutting concerns such as auth and error handling live in `src/middleware/` and `src/validation/`.
+
+### Validation
+- PASS `npm ci`
+- PASS Boot smoke test for `node src/app.js`
+- PASS Endpoint smoke tests for `POST /api/checkout`, denied checkout flow, `GET /api/admin/financial-report` with and without `x-admin-token`, and `DELETE /api/users/:id`
+- PASS Transaction rollback check confirmed failed checkout writes are rolled back
+- PASS Referential integrity check confirmed user deletion no longer leaves orphan enrollments or payments
