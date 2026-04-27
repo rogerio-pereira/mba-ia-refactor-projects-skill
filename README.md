@@ -518,32 +518,37 @@ Resumo do relatório:
 
 ## Construção da Skill
 
-Em vez de duplicar a skill dentro de cada projeto, a implementação foi centralizada em:
+A skill entregue é única e se chama `refactor-arch`. Ela foi copiada integralmente para dentro dos três projetos-alvo, provando que o mesmo conjunto de instruções e referências pode ser reutilizado em stacks diferentes:
 
-- `.agents/skills/antipattern-detector/SKILL.md`
-- `.agents/skills/refactor-from-audit/SKILL.md`
+- `code-smells-project/.agents/skills/refactor-arch/`
+- `ecommerce-api-legacy/.agents/skills/refactor-arch/`
+- `task-manager-api/.agents/skills/refactor-arch/`
 
-Essa quebra da regra do enunciado foi intencional. A motivação foi evitar duplicação de código e manter uma única fonte de verdade para:
+Também mantive uma cópia de trabalho na raiz em `.agents/skills/refactor-arch/`, mas a execução e a correção podem ser feitas diretamente dentro de cada projeto.
 
-- heurísticas de análise
-- catálogo de anti-patterns
-- template de relatório
-- diretrizes MVC
-- fluxo de refatoração
+A estrutura da skill é composta por:
 
-Na prática, a skill de auditoria ficou concentrada em `.agents/skills/antipattern-detector/SKILL.md`, e a skill de refatoração incremental ficou separada em `.agents/skills/refactor-from-audit/SKILL.md`.
+- `SKILL.md`: define as 3 fases obrigatórias, regras de operação, pausa antes da Fase 3 e critérios de validação.
+- `references/project-analysis.md`: heurísticas para detectar linguagem, framework, dependências, banco, domínio, rotas e arquitetura.
+- `references/antipattern-catalog.md`: catálogo com anti-patterns distribuídos entre CRITICAL, HIGH, MEDIUM e LOW, incluindo APIs deprecated.
+- `references/audit-report-template.md`: template padronizado para os relatórios da Fase 2.
+- `references/mvc-guidelines.md`: responsabilidades esperadas para Models, Views/Routes, Controllers, Services, Config, Middleware e Composition Root.
+- `references/refactoring-playbook.md`: padrões concretos de refatoração com exemplos antes/depois.
 
 ### Decisão arquitetural
 
-- eliminou a necessidade de manter três cópias idênticas da mesma skill
-- permitiu evoluir auditoria e refatoração de forma desacoplada, mas reutilizável nos três projetos
-
-O trade-off é que a estrutura final não segue literalmente a exigência de copiar a skill para dentro de cada projeto. Ainda assim, a mesma base de conhecimento foi usada para os três cenários, preservando o objetivo principal do desafio: provar reutilização entre stacks diferentes.
+- A skill é agnóstica de tecnologia: ela detecta a stack a partir de manifests, imports, rotas, entry points e dependências antes de sugerir qualquer alteração.
+- A Fase 2 não altera arquivos: ela apenas gera o relatório, ordena os achados por severidade e pede confirmação explícita.
+- A Fase 3 usa o relatório como fonte da verdade e aplica mudanças incrementais, sempre preservando contratos HTTP existentes.
+- Os arquivos de referência concentram conhecimento reutilizável sem acoplar a skill a um projeto específico.
 
 ## Resultados
 
 ### Relatórios usados
 
+- `reports/audit-project-1.md`
+- `reports/audit-project-2.md`
+- `reports/audit-project-3.md`
 - `reports/code-smells/audit.md`
 - `reports/code-smells/audit-2.md`
 - `reports/ecommerce/audit-1.md`
@@ -594,3 +599,79 @@ O trade-off é que a estrutura final não segue literalmente a exigência de cop
 ### Evidências
 
 As evidências de execução e validação estão registradas diretamente nos relatórios, inclusive com itens marcados como `[FIXED]` e comandos de verificação ao final de cada auditoria.
+
+## Como Executar
+
+### Pré-requisitos
+
+- OpenAI Codex instalado e configurado no ambiente local.
+- Dependências de cada projeto instaladas quando a validação exigir execução da aplicação.
+- Executar os comandos a partir da raiz deste repositório.
+
+### Projeto 1 — `code-smells-project`
+
+```bash
+cd code-smells-project
+codex "/refactor-arch"
+```
+
+Relatório esperado:
+
+```bash
+../reports/audit-project-1.md
+```
+
+Validação principal:
+
+```bash
+python -m compileall .
+python app.py
+```
+
+### Projeto 2 — `ecommerce-api-legacy`
+
+```bash
+cd ecommerce-api-legacy
+codex "/refactor-arch"
+```
+
+Relatório esperado:
+
+```bash
+../reports/audit-project-2.md
+```
+
+Validação principal:
+
+```bash
+npm test
+npm start
+```
+
+### Projeto 3 — `task-manager-api`
+
+```bash
+cd task-manager-api
+codex "/refactor-arch"
+```
+
+Relatório esperado:
+
+```bash
+../reports/audit-project-3.md
+```
+
+Validação principal:
+
+```bash
+python -m compileall .
+python app.py
+```
+
+### Observação sobre Claude Code
+
+Caso a correção seja executada com Claude Code, a mesma skill pode ser usada copiando a pasta `refactor-arch` para `.claude/skills/refactor-arch/` dentro de cada projeto e invocando:
+
+```bash
+claude "/refactor-arch"
+```
